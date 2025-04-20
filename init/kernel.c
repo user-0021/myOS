@@ -1,7 +1,12 @@
 
 
 int _kernel_start(){
-	while(1);
+	int i = 0;
+	char* a = 0;
+	while(1){
+		a[i] = 1;
+		i++;
+	}
 
 	return 0;
 }

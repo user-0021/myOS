@@ -6,8 +6,8 @@ ENTRY(_kernel_start)
 
 SECTIONS
 {
-	. = 0xffffffff80001000;
-	.text : AT(0x1000)
+	. = 0x1000;
+	.text : 
 	{
 		ImageBase = .;
 		_text = .;

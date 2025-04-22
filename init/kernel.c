@@ -1,12 +1,42 @@
 
 
 int _kernel_start(){
-	int i = 0;
-	char* a = 0;
-	while(1){
-		a[i] = 1;
-		i++;
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	asm volatile ("nop\n\t");
+	while (1)
+	{
+		/* code */
 	}
+	
 
 	return 0;
 }

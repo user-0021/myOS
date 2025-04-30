@@ -22,24 +22,23 @@ typedef struct
 
 typedef struct
 {
-	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION Info;
+	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION gInfo;
+	EFI_PHYSICAL_ADDRESS screenBuffer;
 } DATA_LIST;
 
 typedef struct
 {
-	PROTOCOL_LIST protocols;
 	TABLE_LIST tables;
 	DATA_LIST data;
-} BOOTLOADER_DATA;
+} KERNEL_INFO;
 
-
-int _kernel_start(BOOTLOADER_DATA* data){
+int _kernel_start(KERNEL_INFO* info){
 	
 
-	VOID *FrameBufferBase = (void*)data->protocols.graphicsOut->Mode->FrameBufferBase;
-	UINT32 Width = data->data.Info.HorizontalResolution;
-	UINT32 Height = data->data.Info.VerticalResolution;
-	UINT32 PixelsPerScanLine = data->data.Info.PixelsPerScanLine;
+	VOID *FrameBufferBase = (void*)info->data.screenBuffer;
+	UINT32 Width = info->data.gInfo.HorizontalResolution;
+	UINT32 Height = info->data.gInfo.VerticalResolution;
+	UINT32 PixelsPerScanLine = info->data.gInfo.PixelsPerScanLine;
 
 	EFI_GRAPHICS_OUTPUT_BLT_PIXEL *FB = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *)FrameBufferBase;
 

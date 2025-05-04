@@ -1,5 +1,5 @@
 #build 
-pmn b x86_64-kernel
+pmn b x86_64
 make all
 
 #make efi file

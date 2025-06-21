@@ -5,3 +5,8 @@
 *.o
 .vscode
 *.fd
+*.bin
+*.d
+*.iso
+*.log
+isofiles

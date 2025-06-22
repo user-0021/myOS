@@ -52,7 +52,7 @@ C_OBJS_32 += $(patsubst %.c,%.o,$(filter %.c, $(SRCS_32)))
 S_OBJS_64 += $(patsubst %.S,%.o,$(filter %.S, $(SRCS_64)))
 S_OBJS_32 += $(patsubst %.S,%.o,$(filter %.S, $(SRCS_32)))
 
-DIRS = obj $(addprefix obj/ ,$(sort $(dir $(C_OBJS_64)))) $(addprefix obj/ ,$(sort $(dir $(S_OBJS_64)))) $(addsuffix obj/ ,$(sort $(dir $(C_OBJS_32)))) $(addprefix obj/ ,$(sort $(dir $(S_OBJS_32)))) 
+DIRS = obj $(addprefix obj/,$(sort $(dir $(C_OBJS_64)))) $(addprefix obj/,$(sort $(dir $(S_OBJS_64)))) $(addsuffix obj/,$(sort $(dir $(C_OBJS_32)))) $(addprefix obj/,$(sort $(dir $(S_OBJS_32)))) 
 
 
 

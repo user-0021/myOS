@@ -1,3 +1,4 @@
+.extern _image_end
 
 .section .text
 .globl	_load_kernelCode
@@ -10,9 +11,11 @@
 _load_kernelCode:
 	mov %ecx, %eax;
 	mov %edx, %ecx;
-	shr %ecx, 2;
+	mov $2, %cl;
+	shr %ecx, %cl;
+	mov $_image_end
 L_copy_loop:
-	mov (%eax),()
+	//mov (%eax),()
 	loop L_copy_loop;
 
 	ret;

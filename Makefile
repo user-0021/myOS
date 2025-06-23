@@ -1,4 +1,6 @@
-# INIT
+# makefile
+include config.mk
+
 
 # common data
 TARGET = kernel.elf
@@ -17,11 +19,6 @@ DEP_FILES_32 =
 
 INCLUDE = .
 
-ifndef TARGET_ARCH
-	TARGET_ARCH = x86_64
-endif
-
-
 #set each arch
 ifeq ($(TARGET_ARCH), x86_64)
 	CC = x86_64-elf-gcc
@@ -33,12 +30,18 @@ ifeq ($(TARGET_ARCH), x86_64)
 	CFLAGS_32	= -ffreestanding -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -mabi=ms -Wall -Wextra -Wpedantic -O3 
 	LDFLAGS_64	= -nostdlib -shared -Wl,-T,amd64.lds -Wl,-Bsymbolic -Wl,-znocombreloc -lgcc
 	LDFLAGS_32	= -nostdlib -shared -Wl,-T,x86.lds -Wl,-Bsymbolic -Wl,-znocombreloc -lgcc
-	OBJCPY_FLAG	=  --readonly-text -I binary -O elf64-x86-64
 	TARGET_32_FORMAT = elf32-x86-64
 	TARGET_64_FORMAT = elf64-x86-64
 	TARGET_FORMAT = elf64-x86-64
 else
 	$(error Unsupported TARGET_ARCH: $(TARGET_ARCH))
+endif
+
+#set each compress
+ifeq ($(KERNEL_COMPRESS), NON)
+	CFLAGS_32 += -D KERNEL_NONCOMPRESS
+else
+	$(error Unsupported KERNEL_COMPRESS: $(KERNEL_COMPRESS))
 endif
 
 #find all file

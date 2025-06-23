@@ -1,32 +1,7 @@
 
 int _kernel_start(){
-	int a = 2;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	a++;
-	char* as = "HEllop aijdas";
 	
-	return as[a];
+	return 0;
 }
 
 //#include <uefi/uefi.h>

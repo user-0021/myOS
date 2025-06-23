@@ -5,7 +5,7 @@ ENTRY(_entry_point)
 SECTIONS
 {
 	. = 0x1000;
-	ImageBase = .;
+	_image_start = .;
 	.hash : { *(.hash) }
 	.gnu.hash : { *(.gnu.hash) }
 	. = ALIGN(0x1000);
@@ -79,4 +79,5 @@ SECTIONS
 		*(.note*)
 		*(.comment*)
 	}
+	_image_end = .;
 }

@@ -1,3 +1,7 @@
+.extern _binary_code64_elf_bin_start
+.extern _binary_code64_elf_bin_end
+.extern _load_kernelCode
+
 .section .multiboot_header
 header_start:
     .long 0xe85250d6                 # magic number (multiboot 2)
@@ -14,6 +18,16 @@ header_start:
     .long 8    # size
 header_end:
 
+.section .data
+.globl _init_stack         
+.type _init_stack, @object 
+.globl _init_stack_end         
+.type _init_stack_end, @object 
+.align 16                      
+_init_stack:
+	.space 4096                
+_init_stack_end:
+
 
 .section .text
 .globl	_entry_point
@@ -21,6 +35,13 @@ header_end:
 
 
 _entry_point:
+	mov $_init_stack_end, %esp;
+	mov $_binary_code64_elf_bin_start, %ecx;
+	mov $_binary_code64_elf_bin_end, %edx;
+	sub %ecx, %edx;
+
+	call _load_kernelCode;
+
     nop;
     nop;
     nop;

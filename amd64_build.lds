@@ -1,18 +1,17 @@
-OUTPUT_FORMAT("elf32-i386")
-OUTPUT_ARCH(i386:i386)
-ENTRY(_entry_point)
+OUTPUT_FORMAT("elf64-x86-64")
+OUTPUT_ARCH(i386:x86-64)
+ENTRY(_kernel_start)
+
+
 
 SECTIONS
 {
 	. = 0x1000;
-	_image_start = .;
-	.hash : { *(.hash) }
-	.gnu.hash : { *(.gnu.hash) }
-	. = ALIGN(0x1000);
-	.text :
+	.text : 
 	{
+		ImageBase = .;
 		_text = .;
-		*(.multiboot_header)
+		*(.code32_section)
 		*(.text)
 		*(.text.*)
 		*(.gnu.linkonce.t.*)
@@ -20,10 +19,6 @@ SECTIONS
 	}
 	_etext = .;
 	_text_size = . - _text;
-	.note.gnu.build-id :
-    {
-        *(.note.gnu.build-id)
-    }
 	. = ALIGN(0x1000);
 	.rdata :
 	{
@@ -35,6 +30,11 @@ SECTIONS
 		*(.gnu.linkonce.r.*)
 	}
 	. = ALIGN(0x1000);
+
+	.hash : { *(.hash) }
+	.gnu.hash : { *(.gnu.hash) }
+	. = ALIGN(0x1000);
+
 	.data :
 	{
 		*(.data*)
@@ -83,5 +83,5 @@ SECTIONS
 		*(.note*)
 		*(.comment*)
 	}
-	_image_end = .;
+	_kernel_end = .;
 }

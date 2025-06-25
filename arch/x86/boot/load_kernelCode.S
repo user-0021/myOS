@@ -17,7 +17,6 @@ _load_kernelCode:
 	mov $0x200A, %ebx;
 	and $0xFFFFFFFF,%ebx;
 	movl $10, (%ebx);
-	movl $12, _image_end;
 	hlt;
 	hlt;
 	hlt;

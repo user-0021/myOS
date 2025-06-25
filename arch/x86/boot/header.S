@@ -1,6 +1,8 @@
-.extern _binary_code64_elf_bin_start
-.extern _binary_code64_elf_bin_end
+# .extern _binary_code64_elf_bin_start
+# .extern _binary_code64_elf_bin_end
 .extern _load_kernelCode
+
+.equ STACK_SIZE, 4096       // スタックサイズを定義
 
 .section .multiboot_header
 header_start:
@@ -19,15 +21,10 @@ header_start:
 header_end:
 
 .section .data
-.globl _init_stack         
-.type _init_stack, @object 
-.globl _init_stack_end         
-.type _init_stack_end, @object 
-.align 16                      
-_init_stack:
-	.space 4096                
-_init_stack_end:
-
+.align 16         
+.globl _init_stack_begin 
+_init_stack_begin:
+    .space STACK_SIZE        
 
 .section .text
 .globl	_entry_point
@@ -35,9 +32,9 @@ _init_stack_end:
 
 
 _entry_point:
-	mov $_init_stack_end, %esp;
-	mov $_binary_code64_elf_bin_start, %ecx;
-	mov $_binary_code64_elf_bin_end, %edx;
+#	mov $(_init_stack_begin + STACK_SIZE), %esp;
+# 	mov $_binary_code64_elf_bin_start, %ecx;
+# 	mov $_binary_code64_elf_bin_end, %edx;
 	sub %ecx, %edx;
 
 	call _load_kernelCode;

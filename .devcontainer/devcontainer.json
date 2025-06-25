@@ -1,0 +1,24 @@
+
+{
+	"name": "x86_64-ubuntu-ja",
+
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+
+	"customizations": {
+		"vscode": {
+			"extensions" : [
+				"ms-vscode.cpptools",
+				"ms-vscode.cpptools-extension-pack",
+				"ms-vscode.cpptools-themes",
+				"basdp.language-gas-x86",
+				"trond-snekvik.gnu-mapfiles",
+				"ms-vscode.hexeditor",
+				"MS-CEINTL.vscode-language-pack-ja",
+				"ZixuanWang.linkerscript",
+				"ms-vscode.makefile-tools"
+			]
+		}
+	}
+}

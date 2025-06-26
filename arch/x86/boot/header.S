@@ -2,17 +2,18 @@
 .extern _binary_code64_elf_bin_end
 .extern _load_kernelCode
 
-.equ STACK_SIZE, 4096      
+.equ MULTIBOOT_MAGIC, 0xe85250d6
+.equ MULTIBOOT_ARCH, 0
 .equ STACK_SIZE, 4096
 
 .section .multiboot_header
 .align  8
 header_start:
-    .long 0xe85250d6                 # magic number (multiboot 2)
-    .long 0                          # architecture 0 (protected mode i386)
+    .long MULTIBOOT_MAGIC                 # magic number (multiboot 2)
+    .long MULTIBOOT_ARCH             # architecture 0 (protected mode i386)
     .long header_end - header_start  # header length
     # checksum
-    .long 0x100000000 - (0xe85250d6 + 0 + (header_end - header_start))
+    .long 0x100000000 - (MULTIBOOT_MAGIC + MULTIBOOT_ARCH + (header_end - header_start))
 
     # insert optional multiboot tags here
 

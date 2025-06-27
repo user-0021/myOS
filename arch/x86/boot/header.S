@@ -2,8 +2,15 @@
 .extern _binary_code64_elf_bin_end
 .extern _load_kernelCode
 
+#HEAD
 .equ MULTIBOOT_MAGIC, 0xe85250d6
 .equ MULTIBOOT_ARCH, 0
+#TAG TYPES
+.equ END_TAG_TYPE, 0
+.equ ADDRESS_TAG_TYPE, 2
+.equ ENTRY_ADDRESS_TAG_TYPE, 3
+.equ MULTIBOOT_ARCH, 0
+#DEFINE
 .equ STACK_SIZE, 4096
 
 .section .multiboot_header
@@ -18,16 +25,30 @@ header_start:
     # insert optional multiboot tags here
 
     # entry address tag
-    .word 3    # type
+entry_address_tag_start:
+    .word ENTRY_ADDRESS_TYPE # type
     .word 0    # flags
-    .long 12    # size
+    .long entry_address_tag_end - entry_address_tag_start # size
     .long _entry_point # entry
 	.align  8
+entry_address_tag_end:
+
+
+    # entry address tag
+address_tag_start:
+    .word ADDRESS_TAG_TYPE    # type
+    .word 0    # flags
+    .long address_tag_end - address_tag_start # size
+    .long _entry_point # entry
+	.align  8
+address_tag_end:
 
     # required end tag
-    .word 0    # type
+end_tag_start:
+    .word END_TAG_TYPE # type
     .word 0    # flags
-    .long 8    # size
+    .long end_tag_end - end_tag_start # size
+end_tag_end:
 header_end:
 
 .section .data
@@ -42,23 +63,9 @@ _init_stack_begin:
 
 
 _entry_point:
-#	mov $(_init_stack_begin + STACK_SIZE), %esp;
-# 	mov $_binary_code64_elf_bin_start, %ecx;
-# 	mov $_binary_code64_elf_bin_end, %edx;
-    nop;
-    nop;
-    nop;
-    hlt;
-    hlt;
-    hlt;
-    hlt;
-    hlt;
-    hlt;
-    hlt;
-    hlt;
-    hlt;
-    hlt;
-    hlt;
+	mov $(_init_stack_begin + STACK_SIZE), %esp;
+ 	mov $_binary_code64_elf_bin_start, %ecx;
+ 	mov $_binary_code64_elf_bin_end, %edx;
 	sub %ecx, %edx;
 
 	call _load_kernelCode;

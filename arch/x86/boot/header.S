@@ -26,22 +26,12 @@ header_start:
 
     # entry address tag
 entry_address_tag_start:
-    .word ENTRY_ADDRESS_TYPE # type
+    .word ENTRY_ADDRESS_TAG_TYPE # type
     .word 0    # flags
     .long entry_address_tag_end - entry_address_tag_start # size
     .long _entry_point # entry
 	.align  8
 entry_address_tag_end:
-
-
-    # entry address tag
-address_tag_start:
-    .word ADDRESS_TAG_TYPE    # type
-    .word 0    # flags
-    .long address_tag_end - address_tag_start # size
-    .long _entry_point # entry
-	.align  8
-address_tag_end:
 
     # required end tag
 end_tag_start:

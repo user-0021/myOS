@@ -6,8 +6,6 @@ SECTIONS
 {
 	. = 0x10000;
 	_image_start = .;
-	.hash : { *(.hash) }
-	.gnu.hash : { *(.gnu.hash) }
 	. = ALIGN(0x1000);
 	.text :
 	{
@@ -53,6 +51,9 @@ SECTIONS
 	}
 	. = ALIGN(0x1000);
 	.dynamic  : { *(.dynamic) }
+	. = ALIGN(0x1000);
+	.hash : { *(.hash) }
+	.gnu.hash : { *(.gnu.hash) }
 	. = ALIGN(0x1000);
 	.rel :
 	{

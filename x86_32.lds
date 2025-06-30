@@ -18,11 +18,6 @@ SECTIONS
 	}
 	_etext = .;
 	_text_size = . - _text;
-	.note.gnu.build-id :
-    {
-        *(.note.gnu.build-id)
-    }
-	. = ALIGN(0x1000);
 	.rdata :
 	{
 		_data = .;
@@ -54,6 +49,10 @@ SECTIONS
 	. = ALIGN(0x1000);
 	.hash : { *(.hash) }
 	.gnu.hash : { *(.gnu.hash) }
+	.note.gnu.build-id :
+    {
+        *(.note.gnu.build-id)
+    }
 	. = ALIGN(0x1000);
 	.rel :
 	{
@@ -77,6 +76,13 @@ SECTIONS
 	. = ALIGN(0x1000);
 	.dynstr   : { *(.dynstr) }
 	. = ALIGN(0x1000);
+	.stack (NOLOAD):
+    {
+        . = ALIGN(4);
+        _stack_start = .;
+        . += 0x1000;
+        _stack_end = .;
+    }
 	/DISCARD/ :
 	{
 		*(.rel.reloc)

@@ -17,7 +17,7 @@ DEP_FILES_64 =
 DEP_FILES_32 = 
 
 
-INCLUDE = .
+INCLUDE = include
 
 #set each arch
 ifeq ($(TARGET_ARCH), x86_64)
@@ -27,9 +27,9 @@ ifeq ($(TARGET_ARCH), x86_64)
 	VPATH_64	= init arch/amd64
 	VPATH_32	= arch/x86/boot
 	CFLAGS_64	= -ffreestanding -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -mabi=ms -Wall -Wextra -Wpedantic -O3 
-	CFLAGS_32	= -m32 -ffreestanding -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -mabi=ms -Wall -Wextra -Wpedantic -O3 
-	LDFLAGS_64	= -nostdlib -shared -Wl,-T,x86_kernel.lds -Wl,-Bsymbolic -Wl,-znocombreloc -lgcc
-	LDFLAGS_32	= -m32 -nostdlib -shared -Wl,-T,x86_32.lds -Wl,-Bsymbolic -Wl,-znocombreloc -lgcc
+	CFLAGS_32	= -m32 -ffreestanding -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -Wall -Wextra -Wpedantic -O3 
+	LDFLAGS_64	= -nostdlib -shared -Wl,-T,x86_kernel.lds -Wl,-Bsymbolic -Wl,-znocombreloc -lgcc 
+	LDFLAGS_32	= -m32 -nostdlib -shared -Wl,-T,x86_32.lds -Wl,-Bsymbolic -Wl,-znocombreloc -lgcc -Wl,-z,noexecstack -no-pie
 	TARGET_32_FORMAT = elf32-i386
 	TARGET_64_FORMAT = elf64-x86-64
 	TARGET_FORMAT = elf64-x86-64
@@ -55,8 +55,8 @@ C_OBJS_32 += $(patsubst %.c,%.o,$(filter %.c, $(SRCS_32)))
 S_OBJS_64 += $(patsubst %.S,%.o,$(filter %.S, $(SRCS_64)))
 S_OBJS_32 += $(patsubst %.S,%.o,$(filter %.S, $(SRCS_32)))
 
-DIRS = obj $(addprefix obj/,$(sort $(dir $(C_OBJS_64)))) $(addprefix obj/,$(sort $(dir $(S_OBJS_64)))) $(addsuffix obj/,$(sort $(dir $(C_OBJS_32)))) $(addprefix obj/,$(sort $(dir $(S_OBJS_32)))) 
-
+DIRS_NO_SORT = obj $(addprefix obj/,$(sort $(dir $(C_OBJS_64)))) $(addprefix obj/,$(sort $(dir $(S_OBJS_64)))) $(addprefix obj/,$(sort $(dir $(C_OBJS_32)))) $(addprefix obj/,$(sort $(dir $(S_OBJS_32)))) 
+DIRS_SORTED = $(sort $(DIRS_NO_SORT))
 
 
 -include $(DEP_FILES_64)
@@ -77,19 +77,19 @@ clean:
 	$(RM) -r obj/
 
 
-$(TARGET): $(DIRS) $(TARGET_64) $(TARGET_32)
+$(TARGET): $(DIRS_SORTED) $(TARGET_64) $(TARGET_32)
 	$(CC) -nostdlib -shared -Wl,-T,x86_image.lds -Wl,-Bsymbolic -Wl,-znocombreloc -lgcc -o $@ $(TARGET_32).o
 #	$(OBJ_CPY) -I $(TARGET_32_FORMAT) -O $(TARGET_FORMAT) $(TARGET_32) $(TARGET)
 
 
 $(TARGET_64): $(C_OBJS_64) $(S_OBJS_64) $(DATA_64)
-	$(CC) $(LDFLAGS_64) -o $@ $(patsubst %,-I %,$(INCLUDE)) $(addprefix obj/, $(C_OBJS_64)) $(addprefix obj/, $(S_OBJS_64)) $(DATA_64)
+	$(CC) $(LDFLAGS_64) -o $@ $(addprefix obj/, $(C_OBJS_64)) $(addprefix obj/, $(S_OBJS_64)) $(DATA_64)
 	$(OBJ_CPY) -O binary $(TARGET_64) $(TARGET_64).bin
 	$(OBJ_CPY) --readonly-text -I binary -O $(TARGET_32_FORMAT) $(TARGET_64).bin $(TARGET_64).o
 
 
 $(TARGET_32): $(C_OBJS_32) $(S_OBJS_32) $(DATA_32)
-	$(CC) $(LDFLAGS_32) -o $@ $(patsubst %,-I %,$(INCLUDE)) $(addprefix obj/, $(C_OBJS_32)) $(addprefix obj/, $(S_OBJS_32)) $(DATA_32)
+	$(CC) $(LDFLAGS_32) -o $@ $(addprefix obj/, $(C_OBJS_32)) $(addprefix obj/, $(S_OBJS_32)) $(DATA_32)
 	$(OBJ_CPY) -O binary $(TARGET_32) $(TARGET_32).bin
 	$(OBJ_CPY) --readonly-text -I binary -O $(TARGET_FORMAT) $(TARGET_32).bin $(TARGET_32).o
 
@@ -97,20 +97,20 @@ $(TARGET_32): $(C_OBJS_32) $(S_OBJS_32) $(DATA_32)
 
 
 $(C_OBJS_64): %.o: %.c
-	$(CC) $(CFLAGS_64) -c $< -o obj/$@ -MMD -MP 
+	$(CC) $(CFLAGS_64) $(patsubst %,-I %,$(INCLUDE)) -c $< -o obj/$@ -MMD -MP 
 
 $(C_OBJS_32): %.o: %.c
-	$(CC) $(CFLAGS_32) -c $< -o obj/$@ -MMD -MP 
+	$(CC) $(CFLAGS_32) $(patsubst %,-I %,$(INCLUDE)) -c $< -o obj/$@ -MMD -MP 
 
 
 $(S_OBJS_64): %.o: %.S
-	$(CC) $(CFLAGS_64) -c $< -o obj/$@ -MMD -MP 
+	$(CC) $(CFLAGS_64) $(patsubst %,-I %,$(INCLUDE)) -c $< -o obj/$@ -MMD -MP 
 
 $(S_OBJS_32): %.o: %.S
-	$(CC) $(CFLAGS_32) -c $< -o obj/$@ -MMD -MP 
+	$(CC) $(CFLAGS_32) $(patsubst %,-I %,$(INCLUDE)) -c $< -o obj/$@ -MMD -MP 
 
 
-$(DIRS):
+$(DIRS_SORTED):
 	@echo "Creating directory: $@"
 	@mkdir -p $@
 

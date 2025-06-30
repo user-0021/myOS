@@ -32,6 +32,10 @@ SECTIONS
 
 	.hash : { *(.hash) }
 	.gnu.hash : { *(.gnu.hash) }
+	.note.gnu.build-id :
+    {
+        *(.note.gnu.build-id)
+    }
 	. = ALIGN(0x1000);
 
 	.data :

@@ -1,0 +1,5 @@
+#pragma once
+
+#define MEMORY_PAGE_SIZE 0x1000
+
+#define MEMORY_PAGE_OFFSET_MASK 0xFFF

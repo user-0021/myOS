@@ -44,6 +44,14 @@ SECTIONS
 		*(.gnu.linkonce.b.*)
 		*(COMMON)
 	}
+	. = ALIGN(0x1000);	
+	.stack :
+    {
+        . = ALIGN(4);
+        _stack_start = .;
+        . += 0x1000;
+        _stack_end = .;
+    }
 	. = ALIGN(0x1000);
 	.dynamic  : { *(.dynamic) }
 	. = ALIGN(0x1000);
@@ -76,13 +84,6 @@ SECTIONS
 	. = ALIGN(0x1000);
 	.dynstr   : { *(.dynstr) }
 	. = ALIGN(0x1000);
-	.stack (NOLOAD):
-    {
-        . = ALIGN(4);
-        _stack_start = .;
-        . += 0x1000;
-        _stack_end = .;
-    }
 	/DISCARD/ :
 	{
 		*(.rel.reloc)

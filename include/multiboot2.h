@@ -38,6 +38,7 @@
 /*  Alignment of the multiboot info structure. */
 #define MULTIBOOT_INFO_ALIGN                    0x00000008
 
+
 /*  Flags set in the ’flags’ member of the multiboot header. */
 
 #define MULTIBOOT_TAG_ALIGN                  8
@@ -228,7 +229,9 @@ struct multiboot_tag_basic_meminfo
 {
   multiboot_uint32_t type;
   multiboot_uint32_t size;
+#define MULTIBOOT_MEMORY_LOWER_HEAD                    0x00000000 //改変箇所(アドレスの開始位置を示す定数導入のため)
   multiboot_uint32_t mem_lower;
+#define MULTIBOOT_MEMORY_UPPER_HEAD                    0x00100000 //改変箇所(アドレスの開始位置を示す定数導入のため)
   multiboot_uint32_t mem_upper;
 };
 

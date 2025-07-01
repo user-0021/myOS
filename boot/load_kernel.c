@@ -5,9 +5,17 @@
 #include <page_controller.h>
 
 #ifdef KERNEL_NONCOMPRESS
-int32_t load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load_address,char* load_address_limit);
+int32_t _load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load_address,char* load_address_limit);
 #endif
 
+/**
+ * @brief load 64bit kernel image on physical address
+ * 
+ * @param kernel_code start address of kernel image 
+ * @param code_size   kernel image size
+ * @param info_table  multiboot2 info tag table
+ * @return int32_t status code
+ */
 int32_t load_kernel(char* kernel_code,uint32_t code_size,char* info_table){
 	//calc size
 	uint32_t info_table_size = ((uint32_t*)info_table)[0];
@@ -27,7 +35,7 @@ int32_t load_kernel(char* kernel_code,uint32_t code_size,char* info_table){
 	}
 
 	#ifdef KERNEL_NONCOMPRESS
-	int32_t status = load_kernel_nonconpress(kernel_code,code_size,kernel_load_address,kernel_load_address_limit);
+	int32_t status = _load_kernel_nonconpress(kernel_code,code_size,kernel_load_address,kernel_load_address_limit);
 	#endif
 
 	while(1);
@@ -36,8 +44,16 @@ int32_t load_kernel(char* kernel_code,uint32_t code_size,char* info_table){
 
 
 #ifdef KERNEL_NONCOMPRESS
-#endif
-int32_t load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load_address,char* load_address_limit){
+/**
+ * @brief load noncompress image
+ * 
+ * @param kernel_code        start address of kernel image 
+ * @param code_size          kernel image size
+ * @param load_address       dist address
+ * @param load_address_limit load address limit
+ * @return int32_t status code
+ */
+int32_t _load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load_address,char* load_address_limit){
 	if(load_address + code_size > load_address_limit)
 		return -1;
 
@@ -48,3 +64,4 @@ int32_t load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load_
 	
 	return 0;
 }
+#endif

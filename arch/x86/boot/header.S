@@ -3,6 +3,7 @@
 .extern _binary_code64_elf_bin_start
 .extern _binary_code64_elf_bin_end
 .extern load_kernel
+.extern init_simple_cui
 .extern _stack_end
 
 .section .multiboot_header
@@ -25,6 +26,18 @@ entry_address_tag_start:
 	.align  MULTIBOOT_HEADER_ALIGN
 entry_address_tag_end:
 
+    # frame buffer request
+//framebuffer_tag_start:
+//    .word MULTIBOOT_HEADER_TAG_FRAMEBUFFER # type
+//    .word 0    # flags
+//    .long framebuffer_tag_end - framebuffer_tag_start # size
+//    .long 800 # entry
+//    .long 450 # entry
+//    .long 24 # entry
+//	.align  MULTIBOOT_HEADER_ALIGN
+//framebuffer_tag_end:
+
+
     # required end tag
 end_tag_start:
     .word MULTIBOOT_TAG_TYPE_END # type
@@ -40,16 +53,26 @@ header_end:
 .type	_entry_point, @function
 
 
+# entry point
 _entry_point:
+	#set stack
 	mov $(_stack_end), %esp;
+
+	//call init_simple_cui
+	push %ebx;
+	push %ebx;
+	call init_simple_cui;
+	pop %ebx;
+
+	#calc 64bit image address
  	mov $_binary_code64_elf_bin_start, %ecx;
  	mov $_binary_code64_elf_bin_end, %edx;
 	sub %ecx, %edx;
 
+	#call load kernel
 	push %ebx;
 	push %edx;
 	push %ecx;
-
 	call load_kernel;
 
     nop;

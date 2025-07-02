@@ -3,7 +3,7 @@
 #include <multiboot2.h>
 #include <multiboot2_utils.h>
 
-struct multiboot_tag_framebuffer* frame;
+struct multiboot_tag_framebuffer* frame = NULL;
 
 uint32_t simple_cui_color_list[SIMPLE_CUI_NUM_COLORS] = {0};
 uint32_t cursor_pos[2];
@@ -84,7 +84,7 @@ void fill_screen(SIMPLE_CUI_COLOR color){
  * @param textColor text color
  * @param backColor 
  */
-void print_screen(char* text,SIMPLE_CUI_COLOR textColor,SIMPLE_CUI_COLOR backColor){
+void print_text(char* text,SIMPLE_CUI_COLOR textColor,SIMPLE_CUI_COLOR backColor){
 	
 	if(frame != NULL){
 
@@ -107,7 +107,7 @@ void print_screen(char* text,SIMPLE_CUI_COLOR textColor,SIMPLE_CUI_COLOR backCol
 		case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
 			while (*text != '\0')
 			{
-				_put_char_ega_text(*text,(simple_cui_color_list[textColor] & 0xF000) | (simple_cui_color_list[backColor] & 0x0F00));
+				_put_char_ega_text(*text,(simple_cui_color_list[textColor] & 0x0F00) | (simple_cui_color_list[backColor] & 0xF000));
 				text++;
 			}
 			break;
@@ -291,5 +291,45 @@ void _put_char_rgb(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_colo
  * @param color 
  */
 void _put_char_ega_text(char c,uint16_t color){
-	
+	//put char
+	if(c == '\n' || c == '\r'){
+		if(c == '\r')
+			cursor_pos[0] = 0;
+		else
+			cursor_pos[1]++;
+	}else{
+		uint16_t* dist = (uint16_t*)(((char*)(uint32_t)frame->common.framebuffer_addr) + (cursor_pos[0] << 1) + cursor_pos[1] * frame->common.framebuffer_pitch);
+		*dist = c | color;
+		cursor_pos[0]++;
+	}
+
+	//check x pos
+	if(cursor_pos[0] >= frame->common.framebuffer_width){
+		cursor_pos[0] = 0;
+		cursor_pos[1]++;
+	}
+
+
+	//check y pos
+	if(cursor_pos[1] >= frame->common.framebuffer_height){
+		cursor_pos[1]--;
+
+		//copy buffer
+		uint16_t i,j;
+		for(i = 0;i < (frame->common.framebuffer_height - 1);i ++){
+			uint16_t* line_d = ((uint16_t*)(uint32_t)frame->common.framebuffer_addr) + i       * frame->common.framebuffer_width;
+			uint16_t* line_s = ((uint16_t*)(uint32_t)frame->common.framebuffer_addr) + (i + 1) * frame->common.framebuffer_width;
+
+			//copy line
+			for(j = 0;j < frame->common.framebuffer_width;j ++){
+				line_d[j] = line_s[j];
+			}
+		}
+
+		//clear last line
+		uint16_t* line = ((uint16_t*)(uint32_t)frame->common.framebuffer_addr) + (frame->common.framebuffer_height - 1) * frame->common.framebuffer_width;
+		for(i = 0;i < frame->common.framebuffer_width;i ++){
+			line[i] = (uint16_t)simple_cui_color_list[SIMPLE_CUI_BLACK];
+		}
+	}
 }

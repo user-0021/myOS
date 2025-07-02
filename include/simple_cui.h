@@ -15,6 +15,8 @@ typedef enum {
 	SIMPLE_CUI_BLUE
 } SIMPLE_CUI_COLOR;
 
+extern char ascii_bitmap[256][8];
+
 void init_simple_cui(char* info_table);
 
 void fill_screen(SIMPLE_CUI_COLOR color);

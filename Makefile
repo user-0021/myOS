@@ -26,8 +26,8 @@ ifeq ($(TARGET_ARCH), x86_64)
 	DATA_32	= $(TARGET_64).o
 	VPATH_64	= init
 	VPATH_32	= arch/x86/boot boot
-	CFLAGS_64	= -ffreestanding -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -mabi=ms -Wall -Wextra -Wpedantic -O3 
-	CFLAGS_32	= -m32 -ffreestanding -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -Wall -Wextra -Wpedantic -O3 
+	CFLAGS_64	= -ffreestanding -std=c2x -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -mabi=ms -Wall -Wextra -Wpedantic -O3 
+	CFLAGS_32	= -m32 -std=c2x -ffreestanding -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -Wall -Wextra -Wpedantic -O3 
 	LDFLAGS_64	= -nostdlib -shared -Wl,-T,x86_kernel.lds -Wl,-Bsymbolic -Wl,-znocombreloc -lgcc 
 	LDFLAGS_32	= -m32 -nostdlib -shared -Wl,-T,x86_32.lds -Wl,-Bsymbolic -Wl,-znocombreloc -lgcc -Wl,-z,noexecstack -no-pie
 	TARGET_32_FORMAT = elf32-i386

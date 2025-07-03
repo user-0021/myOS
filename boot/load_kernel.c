@@ -21,11 +21,7 @@ int32_t load_kernel(char* kernel_code,uint32_t code_size,char* info_table){
 	//calc size
 	uint32_t info_table_size = ((uint32_t*)info_table)[0];
 	char* info_table_end = info_table + info_table_size;
-
-	print_text("Hello\n",SIMPLE_CUI_WHITE,SIMPLE_CUI_BLACK);
-	print_text("Hello\r",SIMPLE_CUI_WHITE,SIMPLE_CUI_BLACK);
-	print_text("Bello\r",SIMPLE_CUI_WHITE,SIMPLE_CUI_BLACK);
-
+	
 	//find Basic memory information
 	struct multiboot_tag_basic_meminfo* meminfo;
 	meminfo = (void*)find_tag((uint32_t)info_table,MULTIBOOT_TAG_TYPE_BASIC_MEMINFO);

@@ -27,15 +27,15 @@ entry_address_tag_start:
 entry_address_tag_end:
 
     # frame buffer request
-//framebuffer_tag_start:
-//    .word MULTIBOOT_HEADER_TAG_FRAMEBUFFER # type
-//    .word 0    # flags
-//    .long framebuffer_tag_end - framebuffer_tag_start # size
-//    .long 800 # entry
-//    .long 450 # entry
-//    .long 24 # entry
-//	.align  MULTIBOOT_HEADER_ALIGN
-//framebuffer_tag_end:
+framebuffer_tag_start:
+    .word MULTIBOOT_HEADER_TAG_FRAMEBUFFER # type
+    .word 0    # flags
+    .long framebuffer_tag_end - framebuffer_tag_start # size
+    .long 800 # entry
+    .long 450 # entry
+    .long 24 # entry
+	.align  MULTIBOOT_HEADER_ALIGN
+framebuffer_tag_end:
 
 
     # required end tag

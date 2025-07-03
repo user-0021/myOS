@@ -277,11 +277,155 @@ void _init_for_ega_text(){
 
 
 void _put_char_indexd(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_color){
+	uint32_t width = (frame->common.framebuffer_width / BIT_SIZE) >> 3;
+	uint32_t height = (frame->common.framebuffer_height / BIT_SIZE) >> 3;
 
+	//check
+	if(width == 0 || height == 0)
+		return;
+
+	//put char
+	if(c == '\n' || c == '\r'){
+		if(c == '\r')
+			cursor_pos[0] = 0;
+		else
+			cursor_pos[1]++;
+	}else{
+		//copy ascii from bit map
+		uint32_t i,j,k;
+		uint32_t bytes = frame->common.framebuffer_bpp >> 3;
+		char * print_point = ((char*)(uint32_t)frame->common.framebuffer_addr) + (cursor_pos[0] << 3) * bytes * BIT_SIZE +   (cursor_pos[1] << 3) * frame->common.framebuffer_pitch * BIT_SIZE;
+		
+		for(i = 0;i < 8 * BIT_SIZE;i++){
+			char line_d = ascii_bitmap[(unsigned char)c][i / BIT_SIZE];
+			
+			for(j = 0;j < 8 * BIT_SIZE;j++){
+				SIMPLE_CUI_COLOR color;
+				char* line_s = print_point + bytes * j;
+				
+				//check bit
+				if((line_d >> (7 - j / BIT_SIZE)) & 1)
+					color = text_color;
+				else
+					color = back_color;
+
+				for(k = 0;k < bytes;k++){
+					line_s[k] = ((char*)&simple_cui_color_list[color])[k];
+				}
+			}
+
+			print_point += frame->common.framebuffer_pitch;
+		}
+		
+		cursor_pos[0]++;
+	}
+
+
+	//check x pos
+	if(cursor_pos[0] >= width){
+		cursor_pos[0] = 0;
+		cursor_pos[1]++;
+	}
+
+
+	//check y pos
+	if(cursor_pos[1] >= height){
+		cursor_pos[1]--;
+
+		//copy buffer
+		uint32_t i,j;
+		for(i = 0;i < (height - 1);i ++){
+			char* line_d = ((char*)(uint32_t)frame->common.framebuffer_addr) + i       * (frame->common.framebuffer_pitch << 3);
+			char* line_s = ((char*)(uint32_t)frame->common.framebuffer_addr) + (i + 1) * (frame->common.framebuffer_pitch << 3);
+
+			//copy line
+			for(j = 0;j < (frame->common.framebuffer_pitch << 3);j ++){
+				line_d[j] = line_s[j];
+			}
+		}
+
+		//clear last line
+		char* line = ((char*)(uint32_t)frame->common.framebuffer_addr) + (height - 1) * (frame->common.framebuffer_pitch << 3);
+		for(i = 0;i < (frame->common.framebuffer_pitch << 3);i ++){
+			line[i] = (uint16_t)simple_cui_color_list[SIMPLE_CUI_BLACK];
+		}
+	}
 }
 
 void _put_char_rgb(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_color){
+	uint32_t width = (frame->common.framebuffer_width / BIT_SIZE) >> 3;
+	uint32_t height = (frame->common.framebuffer_height / BIT_SIZE) >> 3;
 
+	//check
+	if(width == 0 || height == 0)
+		return;
+
+	//put char
+	if(c == '\n' || c == '\r'){
+		if(c == '\r')
+			cursor_pos[0] = 0;
+		else
+			cursor_pos[1]++;
+	}else{
+		//copy ascii from bit map
+		uint32_t i,j,k;
+		uint32_t bytes = frame->common.framebuffer_bpp >> 3;
+		char * print_point = ((char*)(uint32_t)frame->common.framebuffer_addr) + (cursor_pos[0] << 3) * bytes * BIT_SIZE +   (cursor_pos[1] << 3) * frame->common.framebuffer_pitch * BIT_SIZE;
+		
+		for(i = 0;i < 8 * BIT_SIZE;i++){
+			char line_d = ascii_bitmap[(unsigned char)c][i / BIT_SIZE];
+			
+			for(j = 0;j < 8 * BIT_SIZE;j++){
+				SIMPLE_CUI_COLOR color;
+				char* line_s = print_point + bytes * j;
+				
+				//check bit
+				if((line_d >> (7 - j / BIT_SIZE)) & 1)
+					color = text_color;
+				else
+					color = back_color;
+
+				for(k = 0;k < bytes;k++){
+					line_s[k] = ((char*)&simple_cui_color_list[color])[k];
+				}
+			}
+
+			print_point += frame->common.framebuffer_pitch;
+		}
+		
+		cursor_pos[0]++;
+	}
+
+
+	//check x pos
+	if(cursor_pos[0] >= width){
+		cursor_pos[0] = 0;
+		cursor_pos[1]++;
+	}
+
+
+	//check y pos
+	if(cursor_pos[1] >= height){
+		cursor_pos[1]--;
+
+		//copy buffer
+		uint32_t i,j;
+		for(i = 0;i < (height - 1);i ++){
+			char* line_d = ((char*)(uint32_t)frame->common.framebuffer_addr) + i       * (frame->common.framebuffer_pitch << 3);
+			char* line_s = ((char*)(uint32_t)frame->common.framebuffer_addr) + (i + 1) * (frame->common.framebuffer_pitch << 3);
+
+			//copy line
+			for(j = 0;j < (frame->common.framebuffer_pitch << 3);j ++){
+				line_d[j] = line_s[j];
+			}
+		}
+
+		//clear last line
+		char* line = ((char*)(uint32_t)frame->common.framebuffer_addr) + (height - 1) * (frame->common.framebuffer_pitch << 3);
+		for(i = 0;i < (frame->common.framebuffer_pitch << 3);i ++){
+			line[i] = (uint16_t)simple_cui_color_list[SIMPLE_CUI_BLACK];
+		}
+	}
 }
 
 /**
@@ -315,7 +459,7 @@ void _put_char_ega_text(char c,uint16_t color){
 		cursor_pos[1]--;
 
 		//copy buffer
-		uint16_t i,j;
+		uint32_t i,j;
 		for(i = 0;i < (frame->common.framebuffer_height - 1);i ++){
 			uint16_t* line_d = ((uint16_t*)(uint32_t)frame->common.framebuffer_addr) + i       * frame->common.framebuffer_width;
 			uint16_t* line_s = ((uint16_t*)(uint32_t)frame->common.framebuffer_addr) + (i + 1) * frame->common.framebuffer_width;

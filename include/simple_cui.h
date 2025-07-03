@@ -2,11 +2,12 @@
 
 #include <stdint.h>
 
+#define BIT_SIZE 3
+#define SIMPLE_CUI_NUM_COLORS 5
 /**
  * @brief simple cui color
  * @details if you want select color you must use this enum value
  */
-#define SIMPLE_CUI_NUM_COLORS 5
 typedef enum {
 	SIMPLE_CUI_BLACK,
 	SIMPLE_CUI_WHITE,

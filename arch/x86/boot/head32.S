@@ -47,6 +47,14 @@ end_tag_start:
 end_tag_end:
 header_end:
   
+# global data
+.section .data
+.global kernel_image_phy_start_address
+.global kernel_image_phy_end_address
+kernel_image_phy_start_address:
+	.long 0
+kernel_image_phy_end_address:
+	.long 0
 
 .section .text
 .globl	_entry_point
@@ -75,6 +83,11 @@ _entry_point:
 	push %ecx;
 	call load_kernel;
 
+	#check return
+	cmp $0, %eax;
+	jl _power_off;
+
+
     nop;
     nop;
     nop;
@@ -83,3 +96,6 @@ _entry_point:
     hlt;
     hlt;
 	jmp _entry_point;
+
+_power_off:
+	ret;

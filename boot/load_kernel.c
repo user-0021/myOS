@@ -5,6 +5,9 @@
 #include <page_controller.h>
 #include <simple_cui.h>
 
+extern uint32_t kernel_image_phy_start_address;
+extern uint32_t kernel_image_phy_end_address;
+
 #ifdef KERNEL_NONCOMPRESS
 int32_t _load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load_address,char* load_address_limit);
 #endif
@@ -17,7 +20,7 @@ int32_t _load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load
  * @param info_table  multiboot2 info tag table
  * @return int32_t status code
  */
-int32_t load_kernel(char* kernel_code,uint32_t code_size,char* info_table){
+uint32_t load_kernel(char* kernel_code,uint32_t code_size,char* info_table){
 	//calc size
 	uint32_t info_table_size = ((uint32_t*)info_table)[0];
 	char* info_table_end = info_table + info_table_size;
@@ -25,8 +28,10 @@ int32_t load_kernel(char* kernel_code,uint32_t code_size,char* info_table){
 	//find Basic memory information
 	struct multiboot_tag_basic_meminfo* meminfo;
 	meminfo = (void*)find_tag((uint32_t)info_table,MULTIBOOT_TAG_TYPE_BASIC_MEMINFO);
-	if(meminfo == NULL)
+	if(meminfo == NULL){
+		print_text("MULTIBOOT_BASIC_MEMINFO not found.",SIMPLE_CUI_WHITE,SIMPLE_CUI_BLACK);
 		return -1;
+	}
 	
 	//calc kernel load address
 	char* kernel_load_address = (void*)MULTIBOOT_MEMORY_UPPER_HEAD;
@@ -35,11 +40,18 @@ int32_t load_kernel(char* kernel_code,uint32_t code_size,char* info_table){
 		kernel_load_address = (void*)(((uint32_t)(info_table_end + MEMORY_PAGE_OFFSET_MASK)) & (~MEMORY_PAGE_OFFSET_MASK));
 	}
 
+	//load
+	int32_t status;
 	#ifdef KERNEL_NONCOMPRESS
-	int32_t status = _load_kernel_nonconpress(kernel_code,code_size,kernel_load_address,kernel_load_address_limit);
+	status = _load_kernel_nonconpress(kernel_code,code_size,kernel_load_address,kernel_load_address_limit);
 	#endif
 
-	while(1);
+	//check
+	if(status < 0){
+		print_text("Failed load kernel code.",SIMPLE_CUI_WHITE,SIMPLE_CUI_BLACK);
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -62,6 +74,9 @@ int32_t _load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load
 	for(i = 0,code_size >>= 2;i < code_size;i++){
 		((uint32_t*)load_address)[i] = ((uint32_t*)kernel_code)[i];
 	}
+	
+	kernel_image_phy_start_address = (uint32_t)load_address;
+	kernel_image_phy_end_address = ((uint32_t)load_address + code_size + MEMORY_PAGE_OFFSET_MASK) & (~MEMORY_PAGE_OFFSET_MASK);
 	
 	return 0;
 }

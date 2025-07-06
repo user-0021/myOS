@@ -6,11 +6,12 @@ ENTRY(_kernel_start)
 
 SECTIONS
 {
-	. = 0x1000;
+	. = 0xffffffff80000000;
 	.text : 
 	{
 		ImageBase = .;
 		_text = .;
+		*(.kernel_header)
 		*(.text)
 		*(.text.*)
 		*(.gnu.linkonce.t.*)

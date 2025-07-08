@@ -1,12 +1,12 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <multiboot2.h>
-#include <multiboot2_utils.h>
-#include <page_controller.h>
-#include <simple_cui.h>
+#include <boot/multiboot2.h>
+#include <boot/multiboot2_utils.h>
+#include <boot/simple_cui.h>
+#include <mem/page_controller.h>
 
-extern uint32_t kernel_image_phy_start_address;
-extern uint32_t kernel_image_phy_end_address;
+extern uint32_t _kernel_image_phy_start_address;
+extern uint32_t _kernel_image_phy_end_address;
 
 #ifdef KERNEL_NONCOMPRESS
 int32_t _load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load_address,char* load_address_limit);
@@ -75,8 +75,8 @@ int32_t _load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load
 		((uint32_t*)load_address)[i] = ((uint32_t*)kernel_code)[i];
 	}
 	
-	kernel_image_phy_start_address = (uint32_t)load_address;
-	kernel_image_phy_end_address = ((uint32_t)load_address + code_size + MEMORY_PAGE_OFFSET_MASK) & (~MEMORY_PAGE_OFFSET_MASK);
+	_kernel_image_phy_start_address = (uint32_t)load_address;
+	_kernel_image_phy_end_address = ((uint32_t)load_address + code_size + MEMORY_PAGE_OFFSET_MASK) & (~MEMORY_PAGE_OFFSET_MASK);
 	
 	return 0;
 }

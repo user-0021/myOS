@@ -1,7 +1,7 @@
 #include <stddef.h>
-#include <simple_cui.h>
-#include <multiboot2.h>
-#include <multiboot2_utils.h>
+#include <boot/simple_cui.h>
+#include <boot/multiboot2.h>
+#include <boot/multiboot2_utils.h>
 
 struct multiboot_tag_framebuffer* frame = NULL;
 

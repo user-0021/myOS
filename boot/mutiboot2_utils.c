@@ -1,6 +1,6 @@
 #include <stddef.h>
-#include <multiboot2.h>
-#include <multiboot2_utils.h>
+#include <boot/multiboot2.h>
+#include <boot/multiboot2_utils.h>
 
 /**
  * @brief find tag from multiboot2 info table

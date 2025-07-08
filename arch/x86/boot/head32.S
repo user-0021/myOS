@@ -1,9 +1,10 @@
-#include <multiboot2.h>
+#include <boot/multiboot2.h>
 
 .extern _binary_code64_elf_bin_start
 .extern _binary_code64_elf_bin_end
 .extern load_kernel
 .extern init_simple_cui
+.extern init_vmem
 .extern _stack_end
 
 .section .multiboot_header
@@ -49,11 +50,11 @@ header_end:
   
 # global data
 .section .data
-.global kernel_image_phy_start_address
-.global kernel_image_phy_end_address
-kernel_image_phy_start_address:
+.global _kernel_image_phy_start_address
+.global _kernel_image_phy_end_address
+_kernel_image_phy_start_address:
 	.long 0
-kernel_image_phy_end_address:
+_kernel_image_phy_end_address:
 	.long 0
 
 .section .text
@@ -68,9 +69,7 @@ _entry_point:
 
 	//call init_simple_cui
 	push %ebx;
-	push %ebx;
 	call init_simple_cui;
-	pop %ebx;
 
 	#calc 64bit image address
  	mov $_binary_code64_elf_bin_start, %ecx;
@@ -87,6 +86,8 @@ _entry_point:
 	cmp $0, %eax;
 	jl _power_off;
 
+	#init vertual memory
+	call init_vmem;
 
     nop;
     nop;

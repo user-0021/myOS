@@ -1,3 +1,5 @@
+#include <arch/x86/cpuid.h>
+
 .extern _kernel_image_phy_start_address
 .extern _kernel_image_phy_end_address
 
@@ -8,8 +10,10 @@
 
 init_vmem:
 # check pdpe1gb support
-	mov $0x80000000, %eax;
+	mov $CPUID_GET_HIGHEST_EXTENDED_FUNCTION, %eax;
 	cpuid;
+	cmp $CPUID_GET_EXTENDED_PROCESSOR_INFO, %eax;
+	jge check_pdpe1gb;
 	hlt;
 	hlt;
 	hlt;
@@ -21,4 +25,32 @@ init_vmem:
 	hlt;
 	hlt;
 	hlt;
+return_init_vm:
 	ret;
+
+check_pdpe1gb:
+	mov $CPUID_GET_EXTENDED_PROCESSOR_INFO, %eax;
+	cpuid;
+	shr $CPUID_EX_EDX_PAGE1GB_SHIFT, %edx;
+	test $1, %edx;
+	je check_pse;
+create_page_pdpe1gb:
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+
+check_pse:
+	mov $CPUID_GET_PROCESSOR_INFO_AND_FEATURES, %eax;
+	cpuid;
+	shr $CPUID_FEAT_EDX_PSE_SHIFT, %edx;
+	test $1, %edx;
+	//je check_pse;
+	hlt;
+	hlt;
+	hlt;
+	hlt;

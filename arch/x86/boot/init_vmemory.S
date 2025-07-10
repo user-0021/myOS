@@ -43,14 +43,33 @@ create_page_pdpe1gb:
 	hlt;
 	hlt;
 	hlt;
+	jmp return_init_vm;
 
 check_pse:
 	mov $CPUID_GET_PROCESSOR_INFO_AND_FEATURES, %eax;
 	cpuid;
 	shr $CPUID_FEAT_EDX_PSE_SHIFT, %edx;
 	test $1, %edx;
-	//je check_pse;
+	je create_page;
+create_page_pse:
 	hlt;
 	hlt;
 	hlt;
 	hlt;
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	jmp return_init_vm;
+
+
+create_page:
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	hlt;
+	jmp return_init_vm;

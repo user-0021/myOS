@@ -85,7 +85,7 @@ $(TARGET): $(DIRS_SORTED) $(TARGET_64) $(TARGET_32)
 $(TARGET_64): $(C_OBJS_64) $(S_OBJS_64) $(DATA_64)
 	$(CC) $(LDFLAGS_64) -o $@ $(addprefix obj/, $(C_OBJS_64)) $(addprefix obj/, $(S_OBJS_64)) $(DATA_64)
 	$(OBJ_CPY) -O binary $(TARGET_64) $(TARGET_64).bin
-	$(OBJ_CPY) --readonly-text -I binary -O $(TARGET_32_FORMAT) $(TARGET_64).bin $(TARGET_64).o
+	$(OBJ_CPY) --readonly-text -I binary -O $(TARGET_32_FORMAT) --rename-section .data=.code64_image,alloc,load,readonly,data,contents $(TARGET_64).bin $(TARGET_64).o
 
 
 $(TARGET_32): $(C_OBJS_32) $(S_OBJS_32) $(DATA_32)

@@ -67,9 +67,10 @@ _entry_point:
 	#set stack
 	mov $(_stack_end), %esp;
 
-	//call init_simple_cui
+	#call init_simple_cui
 	push %ebx;
 	call init_simple_cui;
+	add $0x04,%esp;
 
 	#calc 64bit image address
  	mov $_binary_code64_elf_bin_start, %ecx;
@@ -81,13 +82,20 @@ _entry_point:
 	push %edx;
 	push %ecx;
 	call load_kernel;
+	add $0x0c,%esp;
 
 	#check return
 	cmp $0, %eax;
-	jl _power_off;
+	jl crash;
 
 	#init vertual memory
+	push %ebx;
 	call init_vmem;
+	add $0x04,%esp;
+
+	#check return
+	cmp $0, %eax;
+	jl crash;
 
     nop;
     nop;
@@ -98,5 +106,6 @@ _entry_point:
     hlt;
 	jmp _entry_point;
 
-_power_off:
-	ret;
+crash:
+	cli;
+    hlt;

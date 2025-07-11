@@ -18,9 +18,7 @@
  *  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
  *  IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
-#ifndef MULTIBOOT_HEADER
-#define MULTIBOOT_HEADER 1
+#pragma once
 
 /*  How many bytes from the start of the file we search for the header. */
 #define MULTIBOOT_SEARCH                        32768
@@ -421,4 +419,3 @@ struct multiboot_tag_load_base_addr
 #pragma GCC diagnostic pop //改変箇所(warning抑制のため)
 #endif /*  ! ASM_FILE */
 
-#endif /*  ! MULTIBOOT_HEADER */

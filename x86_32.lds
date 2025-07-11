@@ -33,6 +33,8 @@ SECTIONS
 		*(.data*)
 		*(.sdata*)
 		*(.gnu.linkonce.d.*)
+		. = ALIGN(0x1000);
+		*(.code64_image*)
 	}
 	. = ALIGN(0x1000);
 	.bss :

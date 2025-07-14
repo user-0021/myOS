@@ -10,23 +10,23 @@
 #define PT_INDEX_BITS  9         // 各レベルのページテーブルインデックスに必要なビット数
 
 // 各レベルのオフセットマスクとシフト量
-// 仮想アドレス: 47-39 (PML4E), 38-30 (PDPTE), 29-21 (PDE), 20-12 (PTE), 11-0 (Offset)
+// 仮想アドレス: 47-39 (PML4), 38-30 (PML3), 29-21 (PML2), 20-12 (PML1), 11-0 (Offset)
 
 // PML4 (Page Map Level 4) - 47ビット目から39ビット目
 #define PML4_INDEX_SHIFT   39
 #define PML4_INDEX_MASK    (0x1FFULL << PML4_INDEX_SHIFT) // 9ビットのインデックス
 
-// PDPT (Page Directory Pointer Table) - 38ビット目から30ビット目
-#define PDPT_INDEX_SHIFT   30
-#define PDPT_INDEX_MASK    (0x1FFULL << PDPT_INDEX_SHIFT) // 9ビットのインデックス
+// PML3 (Page Map Level 3) - 38ビット目から30ビット目
+#define PML3_INDEX_SHIFT   30
+#define PML3_INDEX_MASK    (0x1FFULL << PML3_INDEX_SHIFT) // 9ビットのインデックス
 
-// PD (Page Directory) - 29ビット目から21ビット目
-#define PD_INDEX_SHIFT     21
-#define PD_INDEX_MASK      (0x1FFULL << PD_INDEX_SHIFT) // 9ビットのインデックス
+// PML2 (Page Map Level 2) - 29ビット目から21ビット目
+#define PML2_INDEX_SHIFT   21
+#define PML2_INDEX_MASK    (0x1FFULL << PML2_INDEX_SHIFT) // 9ビットのインデックス
 
-// PT (Page Table) - 20ビット目から12ビット目
-#define PT_INDEX_SHIFT     12
-#define PT_INDEX_MASK      (0x1FFULL << PT_INDEX_SHIFT) // 9ビットのインデックス
+// PML1 (Page Map Level 1) - 20ビット目から12ビット目
+#define PML1_INDEX_SHIFT   12
+#define PML1_INDEX_MASK    (0x1FFULL << PML1_INDEX_SHIFT) // 9ビットのインデックス
 
 // ページオフセット - 11ビット目から0ビット目
 #define PAGE_OFFSET_MASK   0xFFFULL      // 12ビットのオフセット (4KBページ)
@@ -72,8 +72,8 @@
 
 //各種GET
 #define GET_PML4_INDEX(addr) (((uint64_t)(addr) & PML4_INDEX_MASK) >> PML4_INDEX_SHIFT)
-#define GET_PDPT_INDEX(addr) (((uint64_t)(addr) & PDPT_INDEX_MASK) >> PDPT_INDEX_SHIFT)
-#define GET_PD_INDEX(addr) (((uint64_t)(addr) & PD_INDEX_MASK) >> PD_INDEX_SHIFT)
-#define GET_PT_INDEX(addr) (((uint64_t)(addr) & PT_INDEX_MASK) >> PT_INDEX_SHIFT)
+#define GET_PML3_INDEX(addr) (((uint64_t)(addr) & PML3_INDEX_MASK) >> PML3_INDEX_SHIFT)
+#define GET_PML2_INDEX(addr) (((uint64_t)(addr) & PML2_INDEX_MASK) >> PML2_INDEX_SHIFT)
+#define GET_PML1_INDEX(addr) (((uint64_t)(addr) & PML1_INDEX_MASK) >> PML1_INDEX_SHIFT)
 #define GET_PAGE_OFFSET(addr) ((uint64_t)(addr) & PAGE_OFFSET_MASK)
 #endif

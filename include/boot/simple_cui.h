@@ -22,4 +22,4 @@ void init_simple_cui(char* info_table);
 
 void fill_screen(SIMPLE_CUI_COLOR color);
 
-void print_text(char* text,SIMPLE_CUI_COLOR textColor,SIMPLE_CUI_COLOR backColor);
+void print_text(char* text,SIMPLE_CUI_COLOR textColor,SIMPLE_CUI_COLOR backColor,...);

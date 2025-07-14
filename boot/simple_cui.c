@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdarg.h>
 #include <boot/simple_cui.h>
 #include <boot/multiboot2.h>
 #include <boot/multiboot2_utils.h>
@@ -14,7 +15,7 @@ void _init_for_rgb();
 void _init_for_ega_text();
 void _put_char_indexd(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_color);
 void _put_char_rgb(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_color);
-void _put_char_ega_text(char c,uint16_t color);
+void _put_char_ega_text(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_color);
 
 /**
  * @brief init simple_cui 
@@ -78,42 +79,66 @@ void fill_screen(SIMPLE_CUI_COLOR color){
 
 
 /**
- * @brief print text
+ * @brief print text (like printf)
  * 
  * @param text      text
  * @param textColor text color
- * @param backColor 
+ * @param backColor back color
+ * @param ...	argment
  */
-void print_text(char* text,SIMPLE_CUI_COLOR textColor,SIMPLE_CUI_COLOR backColor){
+void print_text(char* text,SIMPLE_CUI_COLOR textColor,SIMPLE_CUI_COLOR backColor,...){
 	
 	if(frame != NULL){
+		void(*put_char)(char,SIMPLE_CUI_COLOR,SIMPLE_CUI_COLOR);
 
 		switch (frame->common.framebuffer_type)
 		{
 		case MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED:
-			while (*text != '\0')
-			{
-				_put_char_indexd(*text,textColor,backColor);
-				text++;
-			}
+			put_char = _put_char_indexd;
 			break;
 		case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
-			while (*text != '\0')
-			{
-				_put_char_rgb(*text,textColor,backColor);
-				text++;
-			}
+			put_char = _put_char_rgb;
 			break;
 		case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
-			while (*text != '\0')
-			{
-				_put_char_ega_text(*text,(simple_cui_color_list[textColor] & 0x0F00) | (simple_cui_color_list[backColor] & 0xF000));
-				text++;
-			}
+			put_char = _put_char_ega_text;
 			break;
 		default:
-			break;
+			return;
 		}
+
+		va_list ap;
+		va_start(ap,backColor);
+		while (*text != '\0')
+		{
+			if(*text == '%'){
+				text++;
+				switch (*text)
+				{
+				case '%':
+					put_char(*text,textColor,backColor);
+					break;
+				case 'x':{
+					int8_t i;
+					uint64_t num = va_arg(ap, uint64_t);
+
+					for(i=15;i >= 0;i--){
+						uint8_t n = (num >> (i << 2)) & 0xF;
+						if(n > 0x9){
+							put_char('A' - 0xA + n,textColor,backColor);
+						}else{
+							put_char('0' + n,textColor,backColor);
+						}
+					}
+				}
+					break;
+				default:
+				}
+			}else{
+				put_char(*text,textColor,backColor);
+			}
+			text++;
+		}
+		va_end(ap);
 	}
 }
 
@@ -423,7 +448,7 @@ void _put_char_rgb(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_colo
 		//clear last line
 		char* line = ((char*)(uint32_t)frame->common.framebuffer_addr) + (height - 1) * (frame->common.framebuffer_pitch << 3);
 		for(i = 0;i < (frame->common.framebuffer_pitch << 3);i ++){
-			line[i] = (uint16_t)simple_cui_color_list[SIMPLE_CUI_BLACK];
+			line[i] = (uint16_t)simple_cui_color_list[back_color];
 		}
 	}
 }
@@ -434,7 +459,7 @@ void _put_char_rgb(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_colo
  * @param c 
  * @param color 
  */
-void _put_char_ega_text(char c,uint16_t color){
+void _put_char_ega_text(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_color){
 	//put char
 	if(c == '\n' || c == '\r'){
 		if(c == '\r')
@@ -443,7 +468,7 @@ void _put_char_ega_text(char c,uint16_t color){
 			cursor_pos[1]++;
 	}else{
 		uint16_t* dist = (uint16_t*)(((char*)(uint32_t)frame->common.framebuffer_addr) + (cursor_pos[0] << 1) + cursor_pos[1] * frame->common.framebuffer_pitch);
-		*dist = c | color;
+		*dist = c | (simple_cui_color_list[text_color] & 0x0F00) | (simple_cui_color_list[back_color] & 0xF000);
 		cursor_pos[0]++;
 	}
 

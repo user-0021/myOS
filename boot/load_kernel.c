@@ -71,7 +71,8 @@ int32_t _load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load
 		return -1;
 
 	uint32_t i;
-	for(i = 0,code_size >>= 2;i < code_size;i++){
+	uint32_t count = code_size >> 2;
+	for(i = 0;i < count;i++){
 		((uint32_t*)load_address)[i] = ((uint32_t*)kernel_code)[i];
 	}
 	

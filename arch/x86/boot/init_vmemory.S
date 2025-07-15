@@ -8,24 +8,6 @@
 .extern print_text
 
 .section .data
-.global _phy_memory_end;
-.global _page_phy_start_address
-.global _page_lev4_count
-.global _page_lev3_count
-.global _page_lev2_count
-.global _page_lev1_count
-_phy_memory_end:
-	.quad 0
-_page_phy_start_address:
-	.long 0
-_page_lev4_count:
-	.long 0
-_page_lev3_count:
-	.long 0
-_page_lev2_count:
-	.long 0
-_page_lev1_count:
-	.long 0
 _mmap_tag_not_found_str:
 	.asciz "MULTIBOOT_TAG_TYPE_MMAP not found\r\n"
 _avilable_mem_not_found_str:
@@ -109,25 +91,28 @@ check_pse:
 	test $1 << CPUID_FEAT_EDX_PSE_SHIFT, %edx;
 	je create_page;
 create_page_pse:
+	//alocate stack value (lev3pages,lev2pages)
+	push %ebx;
+	push %edi;
+	sub $0x0c,%esp;
 
 	#calc need page count (lev4pages + lev3pages + lev2pages)
-	push $1; # lev4 page count
-	mov $1,(_page_lev4_count);
+	movl $1, (%esp); # lev4 page count
 
 	#add page3 page count
-	mov 0x08(%esp), %eax;
+	mov 0x18(%esp), %eax;
 	shr $(PML4_INDEX_SHIFT - 32),%eax;
 	and $0x1FF, %eax;
 	inc %eax;
 	add %eax, (%esp); 
-	mov %eax,(_page_lev3_count);
+	mov %eax, 0x04(%esp);
 
 	#add page2 page count
-	mov 0x08(%esp), %edx;
+	mov 0x18(%esp), %edx;
 	shl $(32 - PML3_INDEX_SHIFT),%edx;
 	and $0x1FF, %edx;
 
-	mov 0x04(%esp), %ecx;
+	mov 0x14(%esp), %ecx;
 	shr $(PML3_INDEX_SHIFT),%ecx;
 	and $0x1FF, %ecx;
 	inc %ecx;
@@ -138,14 +123,90 @@ create_page_pse:
 	add %edx, %eax;
 
 	add %eax, (%esp); 
-	mov %eax,(_page_lev2_count);
+	mov %eax, 0x08(%esp);
 
 	#get need page counts
+	mov (%esp),%ecx;
+
+	#set cr3
+	mov (_kernel_image_phy_end_address),%edx;
+	mov %edx,%cr3;
+
+	#fill zero
+	shl $(PAGE_SIZE_SHIFT - 2),%ecx;
+	mov %edx,%edi;
+	xor %eax, %eax;
+	rep stosl;
+
+	# init pages
+	# init for loop
+	mov %edx, %edi;
+	add $PAGE_SIZE, %edx;
+	mov 0x04(%esp),%ecx;
+	movl $0x00,(%esp);
+pse_lev3_page_init_loop:
+	#check loop
+	test %ecx,%ecx;
+	je pse_lev3_page_init_loop_end;
+	dec %ecx;
+	#init lev3 page
+	movl $(PE_PRESENT | PE_RW | PE_US) , (%edi);
+	or  %edx, (%edi);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
+	#inc itr
+	mov %edx, %ebx;
+	add $0x08, %edi;
+	add $PAGE_SIZE, %edx;
+	#calc need lev2 page size
+	mov 0x08(%esp),%eax;
+	movl $0, 0x08(%esp);
+	cmp $0x200, %eax;
+	jge pse_lev2_page_init_loop;
+	sub $0x200, %eax;
+	mov %eax,0x08(%esp);
+	mov $0x200, %eax;
+pse_lev2_page_init_loop:
+	#check loop
+	test %eax,%eax;
+	je pse_lev2_page_init_loop_end;
+	dec %eax;
+	#init lev2 page
+	movl $(PE_PRESENT | PE_RW | PE_US), (%ebx);
+	or  %edx, (%ebx);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
+
+	push %eax;
+pse_write_page_addr:
+	#set phy address to phy address map 
+	mov 0x04(%esp), %eax;
+	shl $PML2_INDEX_SHIFT,%eax;
+	movl $(PE_PRESENT | PE_RW | PE_US | PE_PAT | PE_GLOBAL), (%edx);
+	or  %eax, (%edx);
+	mov 0x04(%esp), %eax;
+	shr $(32 - PML2_INDEX_SHIFT), %eax;
+	movl $((PE_NX) >> 32), 0x04(%edx);
+	or  %eax, 0x04(%edx);
+	add $0x08, %edx;
+	mov 0x04(%esp), %eax;
+	inc %eax;
+	mov %eax,0x04(%esp);
+	#loop check
+	testl $PAGE_OFFSET_MASK,%edx;
+	jne pse_write_page_addr;
 	pop %eax;
 	
-	mov (_kernel_image_phy_end_address),%edx;
+
+	#inc itr
+	add $0x08, %ebx;
+	//add $PAGE_SIZE, %edx;
+
+	jmp pse_lev2_page_init_loop;
+pse_lev2_page_init_loop_end:
 
 
+	jmp pse_lev3_page_init_loop;
+pse_lev3_page_init_loop_end:
+	add $0x0c,%esp;
+	pop %edi;
+	pop %ebx;
 	hlt;
 	jmp return_init_vm_success;
 
@@ -173,7 +234,7 @@ find_avilable_mem:
 	cmp %eax,%edx;
 	jle failed_get_avilavle_mem;
 
-	cmp $1, (%edx);
+	cmpl $1, (%edx);
 	jne find_avilable_mem;
 
 

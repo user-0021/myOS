@@ -52,10 +52,13 @@ header_end:
 .section .data
 .global _kernel_image_phy_start_address
 .global _kernel_image_phy_end_address
-_kernel_image_phy_start_address:
+.global _phy_memory_end
+_kernel_image_phy_start_address: # init in load_kernel and use in init_vmemory 
 	.long 0
-_kernel_image_phy_end_address:
+_kernel_image_phy_end_address: # init in load_kernel and use in init_vmemory 
 	.long 0
+_phy_memory_end: # init in init_vmemory and pass to kernel
+	.quad 0
 
 .section .text
 .globl	_entry_point

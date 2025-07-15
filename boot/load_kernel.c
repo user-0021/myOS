@@ -3,7 +3,7 @@
 #include <boot/multiboot2.h>
 #include <boot/multiboot2_utils.h>
 #include <boot/simple_cui.h>
-#include <mem/page_controller.h>
+#include <arch/x86/page_define.h>
 
 extern uint32_t _kernel_image_phy_start_address;
 extern uint32_t _kernel_image_phy_end_address;
@@ -37,7 +37,7 @@ uint32_t load_kernel(char* kernel_code,uint32_t code_size,char* info_table){
 	char* kernel_load_address = (void*)MULTIBOOT_MEMORY_UPPER_HEAD;
 	char* kernel_load_address_limit = (void*)(MULTIBOOT_MEMORY_UPPER_HEAD + (meminfo->mem_upper << 10));
 	if(((uint32_t)info_table_end) > MULTIBOOT_MEMORY_UPPER_HEAD){
-		kernel_load_address = (void*)(((uint32_t)(info_table_end + MEMORY_PAGE_OFFSET_MASK)) & (~MEMORY_PAGE_OFFSET_MASK));
+		kernel_load_address = (void*)(uint32_t)(((uint32_t)info_table_end + PAGE_OFFSET_MASK) & (~PAGE_OFFSET_MASK));
 	}
 
 	//load
@@ -77,7 +77,7 @@ int32_t _load_kernel_nonconpress(char* kernel_code,uint32_t code_size,char* load
 	}
 	
 	_kernel_image_phy_start_address = (uint32_t)load_address;
-	_kernel_image_phy_end_address = ((uint32_t)load_address + code_size + MEMORY_PAGE_OFFSET_MASK) & (~MEMORY_PAGE_OFFSET_MASK);
+	_kernel_image_phy_end_address = ((uint32_t)load_address + code_size + PAGE_OFFSET_MASK) & (~PAGE_OFFSET_MASK);
 	
 	return 0;
 }

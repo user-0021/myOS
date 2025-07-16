@@ -56,7 +56,7 @@
 #define PE_PS              (1ULL << 7)   // PS (Page Size): 0=次のレベルのテーブル, 1=ラージページ
 
 // アドレス部分のマスク (フラグを除いた上位ビット)
-#define PAGE_FRAME_MASK    0xFFFFFFFFFFFFF000ULL // 物理アドレスフレーム部分 (上位52ビット中12ビットオフセットを引いた部分)
+#define PAGE_FRAME_MASK    0x000FFFFFFFFFF000ULL // 物理アドレスフレーム部分 (上位52ビット中12ビットオフセットを引いた部分)
 
 // ページエントリの物理アドレスを取得するマクロ
 #define GET_PAGE_FRAME(entry) ((entry) & PAGE_FRAME_MASK)

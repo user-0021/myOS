@@ -60,7 +60,98 @@ create_page:
 	hlt;
 	hlt;
 	hlt;
-return_init_vm_success:
+return_init_vm_success:#カーネル用のページングを行うために最後に確保したページ用メモリの次のアドレスをeaxに格納する必要があります
+	#calc kernel code size (by page)
+	mov (_kernel_image_phy_end_address), %ecx;
+	sub (_kernel_image_phy_start_address), %ecx;
+	push %ecx;
+
+	#calc lev1 page counts
+	add $PAGE_OFFSET_MASK, %ecx;
+	shr $PAGE_SIZE_SHIFT, %ecx;
+	push %ecx;
+
+	#calc lev2 page counts
+	add $(PT_ENTRY_COUNT - 1), %ecx;
+	shr $PT_INDEX_BITS, %ecx;
+	push %ecx;
+
+	#calc lev3 page counts
+	add $(PT_ENTRY_COUNT - 1), %ecx;
+	shr $PT_INDEX_BITS, %ecx;
+	push %ecx;
+
+	hlt;
+
+	# init pages
+	# init for loop
+	mov %cr3, %edx;
+	add ,%edx;
+kcode_lev3_page_init_loop:
+	#check loop
+	test %ecx,%ecx;
+	je kcode_lev3_page_init_loop_end;
+	dec %ecx;
+	#init lev3 page
+	movl $(PE_PRESENT | PE_RW | PE_US) , (%edi);
+	or  %edx, (%edi);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
+	#inc itr
+	mov %edx, %ebx;
+	add $0x08, %edi;
+	add $PAGE_SIZE, %edx;
+	#calc need lev2 page size
+	mov 0x08(%esp),%eax;
+	movl $0, 0x08(%esp);
+	cmp $0x200, %eax;
+	jle kcode_lev2_page_init_loop;
+	sub $0x200, %eax;
+	mov %eax,0x08(%esp);
+	mov $0x200, %eax;
+kcode_lev2_page_init_loop:
+	#check loop
+	test %eax,%eax;
+	je kcode_lev2_page_init_loop_end;
+	dec %eax;
+	#init lev2 page
+	movl $(PE_PRESENT | PE_RW | PE_US), (%ebx);
+	or  %edx, (%ebx);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
+
+	push %eax;
+kcode_write_page_addr:
+	#set phy address to phy address map 
+	mov 0x04(%esp), %eax;
+	shl $PML2_INDEX_SHIFT,%eax;
+	movl $(PE_PRESENT | PE_RW | PE_US | PE_PAT | PE_GLOBAL), (%edx);
+	or  %eax, (%edx);
+	mov 0x04(%esp), %eax;
+	shr $(32 - PML2_INDEX_SHIFT), %eax;
+	movl $((PE_NX) >> 32), 0x04(%edx);
+	or  %eax, 0x04(%edx);
+	add $0x08, %edx;
+	mov 0x04(%esp), %eax;
+	inc %eax;
+	mov %eax,0x04(%esp);
+	#loop check
+	testl $PAGE_OFFSET_MASK,%edx;
+	jne kcode_write_page_addr;
+	pop %eax;
+	
+
+	#inc itr
+	add $0x08, %ebx;
+	//add $PAGE_SIZE, %edx;
+
+	jmp kcode_lev2_page_init_loop;
+kcode_lev2_page_init_loop_end:
+
+
+	jmp kcode_lev3_page_init_loop;
+kcode_lev3_page_init_loop_end:
+
+
+	
+
+
 	add $0x08,%esp;
 	mov $0,%eax;
 	ret;
@@ -152,6 +243,9 @@ pse_lev3_page_init_loop:
 	#init lev3 page
 	movl $(PE_PRESENT | PE_RW | PE_US) , (%edi);
 	or  %edx, (%edi);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
+	movl $(PE_PRESENT | PE_RW | PE_US) , (%edi);
+	or  %edx, (%edi);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
+	or  %edx, (%edi);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
 	#inc itr
 	mov %edx, %ebx;
 	add $0x08, %edi;
@@ -160,7 +254,7 @@ pse_lev3_page_init_loop:
 	mov 0x08(%esp),%eax;
 	movl $0, 0x08(%esp);
 	cmp $0x200, %eax;
-	jge pse_lev2_page_init_loop;
+	jle pse_lev2_page_init_loop;
 	sub $0x200, %eax;
 	mov %eax,0x08(%esp);
 	mov $0x200, %eax;
@@ -207,7 +301,7 @@ pse_lev3_page_init_loop_end:
 	add $0x0c,%esp;
 	pop %edi;
 	pop %ebx;
-	hlt;
+	mov %edx, %eax;
 	jmp return_init_vm_success;
 
 # arg0 multiboot2_info_table

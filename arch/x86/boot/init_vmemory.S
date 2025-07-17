@@ -18,8 +18,11 @@ _avilable_mem_not_found_str:
 .globl init_vmem
 .type  init_vmem, @function
 
+# ダイレクトマップおよびカーネルコードを含むリニアアドレスを生成します
 # arg0 multiboot2_info_table
 init_vmem:
+	push %ebx;
+	push %edi;
 	#allocate stack value
 	sub $0x08,%esp;
 
@@ -153,10 +156,14 @@ kcode_lev3_page_init_loop_end:
 
 
 	add $0x08,%esp;
-	mov $0,%eax;
+	pop %edi;
+	pop %ebx;
+	xor %eax,%eax;
 	ret;
 return_init_vm_failed:
 	add $0x08,%esp;
+	pop %edi;
+	pop %ebx;
 	mov $-1,%eax;
 	ret;
 
@@ -182,52 +189,66 @@ check_pse:
 	test $1 << CPUID_FEAT_EDX_PSE_SHIFT, %edx;
 	je create_page;
 create_page_pse:
-	//alocate stack value (lev3pages,lev2pages)
-	push %ebx;
-	push %edi;
-	sub $0x0c,%esp;
-
-	#calc need page count (lev4pages + lev3pages + lev2pages)
-	movl $1, (%esp); # lev4 page count
-
-	#add page3 page count
-	mov 0x18(%esp), %eax;
-	shr $(PML4_INDEX_SHIFT - 32),%eax;
-	and $0x1FF, %eax;
-	inc %eax;
-	add %eax, (%esp); 
-	mov %eax, 0x04(%esp);
-
-	#add page2 page count
-	mov 0x18(%esp), %edx;
-	shl $(32 - PML3_INDEX_SHIFT),%edx;
-	and $0x1FF, %edx;
-
-	mov 0x14(%esp), %ecx;
-	shr $(PML3_INDEX_SHIFT),%ecx;
-	and $0x1FF, %ecx;
-	inc %ecx;
-	add %ecx, %edx;
-
-	shl $0x09, %eax;
-	sub $0x200, %eax;
-	add %edx, %eax;
-
-	add %eax, (%esp); 
-	mov %eax, 0x08(%esp);
-
-	#get need page counts
-	mov (%esp),%ecx;
-
 	#set cr3
 	mov (_kernel_image_phy_end_address),%edx;
 	mov %edx,%cr3;
 
+	#get max address
+	mov (%esp), %ecx;
+	mov 0x04(%esp), %eax;
+
+	#calc lev1 page counts
+	//add $PAGE_OFFSET_MASK, %ecx;
+	//shr $PAGE_SIZE_SHIFT, %ecx;
+	//push %ecx;
+
+	#calc lev2 page counts
+	add $(((PT_ENTRY_COUNT - 1) << PAGE_SIZE_SHIFT) | PAGE_OFFSET_MASK), %ecx;
+	shr $(PT_INDEX_BITS + PAGE_SIZE_SHIFT), %ecx;
+	push %ecx;
+
+	#calc lev3 page counts
+	add $(PT_ENTRY_COUNT - 1), %ecx;
+	shr $PT_INDEX_BITS, %ecx;
+	push %ecx;
+
+	hlt;
 	#fill zero
-	shl $(PAGE_SIZE_SHIFT - 2),%ecx;
+	shl $(3 << (PAGE_SIZE_SHIFT - 2)),%ecx;# (1 lev4_pages + 1 lev3_pages + 1 lev2_pages) << (page_shift - long size) 
 	mov %edx,%edi;
 	xor %eax, %eax;
 	rep stosl;
+
+	//init lev4 page
+	mov %edx, %eax;
+	addl $PAGE_SIZE, %eax;
+	movl $(PE_PRESENT | PE_RW | PE_US) , (%edx);
+	or  %eax, (%edx);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
+
+	//init lev3 page
+	mov %eax, %edx;
+	addl $PAGE_SIZE, %edx;
+	movl $(PE_PRESENT | PE_RW | PE_US) , (%eax);
+	or  %edx, (%eax);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
+
+	//init lev2 page
+	mov %edx, %eax;
+	xor %edx,%edx;
+pse_lev2_page_init_loop:
+	#set phy address to phy address map
+	shl $PML2_INDEX_SHIFT,%eax;
+	movl $(PE_PRESENT | PE_RW | PE_US | PE_PAT | PE_GLOBAL), (%eax);
+	or  %edx, (%eax);
+	movl $((PE_NX) >> 32), 0x04(%eax);
+
+	add $0x08, %edx;
+	mov 0x04(%esp), %eax;
+	inc %eax;
+	mov %eax,0x04(%esp);
+	#loop check
+	testl $PAGE_OFFSET_MASK,%edx;
+	jne pse_lev2_page_init_loop;
+pse_lev2_page_init_loop_end:
 
 	# init pages
 	# init for loop
@@ -240,12 +261,6 @@ pse_lev3_page_init_loop:
 	test %ecx,%ecx;
 	je pse_lev3_page_init_loop_end;
 	dec %ecx;
-	#init lev3 page
-	movl $(PE_PRESENT | PE_RW | PE_US) , (%edi);
-	or  %edx, (%edi);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
-	movl $(PE_PRESENT | PE_RW | PE_US) , (%edi);
-	or  %edx, (%edi);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
-	or  %edx, (%edi);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
 	#inc itr
 	mov %edx, %ebx;
 	add $0x08, %edi;
@@ -299,8 +314,6 @@ pse_lev2_page_init_loop_end:
 	jmp pse_lev3_page_init_loop;
 pse_lev3_page_init_loop_end:
 	add $0x0c,%esp;
-	pop %edi;
-	pop %ebx;
 	mov %edx, %eax;
 	jmp return_init_vm_success;
 
@@ -344,10 +357,22 @@ find_avilable_mem:
 	mov 0x04(%edx), %eax;
 	adc 0x0c(%edx), %eax;
 
-	#set ret value
-	mov %ecx, %edx;
-	xchg %edx,%eax;
+	#check value (max 64 TiB)
+	push %eax;
+	push %ecx;
 
+	test %ecx,%ecx;
+	je find_avilable_mem_0;
+	inc %eax;
+find_avilable_mem_0:
+	cmp $(0x80 << (PML4_INDEX_SHIFT - 32)),%eax; 
+	jle find_avilable_mem_1;
+	movl $0, (%esp);
+	movl $(0x80 << (PML4_INDEX_SHIFT - 32)), 0x04(%esp);
+find_avilable_mem_1:
+
+	pop %eax;
+	pop %edx;
 	ret;
 failed_get_mmap_tag:
 	#print failed reason
@@ -357,8 +382,8 @@ failed_get_mmap_tag:
 	call print_text;
 	add $0x0c,%esp;
 
-	mov $0,%eax;
-	mov $0,%edx;
+	xor %eax,%eax;
+	xor %edx,%edx;
 	ret;
 failed_get_avilavle_mem:
 	#print failed reason
@@ -368,7 +393,7 @@ failed_get_avilavle_mem:
 	call print_text;
 	add $0x0c,%esp;
 
-	mov $0,%eax;
-	mov $0,%edx;
+	xor %eax,%eax;
+	xor %edx,%edx;
 	ret;
 

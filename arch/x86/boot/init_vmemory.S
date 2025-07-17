@@ -89,7 +89,7 @@ return_init_vm_success:#カーネル用のページングを行うために最�
 	# init pages
 	# init for loop
 	mov %cr3, %edx;
-	add ,%edx;
+	//add ,%edx;
 kcode_lev3_page_init_loop:
 	#check loop
 	test %ecx,%ecx;
@@ -197,14 +197,12 @@ create_page_pse:
 	mov (%esp), %ecx;
 	mov 0x04(%esp), %eax;
 
-	#calc lev1 page counts
-	//add $PAGE_OFFSET_MASK, %ecx;
-	//shr $PAGE_SIZE_SHIFT, %ecx;
-	//push %ecx;
-
-	#calc lev2 page counts
+	#calc lev2 page counts 最大値は32bitに収まるので上位バイトは無視
 	add $(((PT_ENTRY_COUNT - 1) << PAGE_SIZE_SHIFT) | PAGE_OFFSET_MASK), %ecx;
+	adc $0, %eax;
 	shr $(PT_INDEX_BITS + PAGE_SIZE_SHIFT), %ecx;
+	shl $(32 - (PT_INDEX_BITS + PAGE_SIZE_SHIFT)), %eax;
+	or %eax, %ecx;
 	push %ecx;
 
 	#calc lev3 page counts
@@ -214,7 +212,7 @@ create_page_pse:
 
 	hlt;
 	#fill zero
-	shl $(3 << (PAGE_SIZE_SHIFT - 2)),%ecx;# (1 lev4_pages + 1 lev3_pages + 1 lev2_pages) << (page_shift - long size) 
+	//shl $(3 << (PAGE_SIZE_SHIFT - 2)),%ecx;# (1 lev4_pages + 1 lev3_pages + 1 lev2_pages) << (page_shift - long size) 
 	mov %edx,%edi;
 	xor %eax, %eax;
 	rep stosl;
@@ -234,7 +232,7 @@ create_page_pse:
 	//init lev2 page
 	mov %edx, %eax;
 	xor %edx,%edx;
-pse_lev2_page_init_loop:
+//pse_lev2_page_init_loop:
 	#set phy address to phy address map
 	shl $PML2_INDEX_SHIFT,%eax;
 	movl $(PE_PRESENT | PE_RW | PE_US | PE_PAT | PE_GLOBAL), (%eax);
@@ -247,8 +245,8 @@ pse_lev2_page_init_loop:
 	mov %eax,0x04(%esp);
 	#loop check
 	testl $PAGE_OFFSET_MASK,%edx;
-	jne pse_lev2_page_init_loop;
-pse_lev2_page_init_loop_end:
+	//jne pse_lev2_page_init_loop;
+//pse_lev2_page_init_loop_end:
 
 	# init pages
 	# init for loop
@@ -256,10 +254,10 @@ pse_lev2_page_init_loop_end:
 	add $PAGE_SIZE, %edx;
 	mov 0x04(%esp),%ecx;
 	movl $0x00,(%esp);
-pse_lev3_page_init_loop:
+//pse_lev3_page_init_loop:
 	#check loop
 	test %ecx,%ecx;
-	je pse_lev3_page_init_loop_end;
+	//je pse_lev3_page_init_loop_end;
 	dec %ecx;
 	#inc itr
 	mov %edx, %ebx;
@@ -269,21 +267,21 @@ pse_lev3_page_init_loop:
 	mov 0x08(%esp),%eax;
 	movl $0, 0x08(%esp);
 	cmp $0x200, %eax;
-	jle pse_lev2_page_init_loop;
+	//jle pse_lev2_page_init_loop;
 	sub $0x200, %eax;
 	mov %eax,0x08(%esp);
 	mov $0x200, %eax;
-pse_lev2_page_init_loop:
+//pse_lev2_page_init_loop:
 	#check loop
 	test %eax,%eax;
-	je pse_lev2_page_init_loop_end;
+	//je pse_lev2_page_init_loop_end;
 	dec %eax;
 	#init lev2 page
 	movl $(PE_PRESENT | PE_RW | PE_US), (%ebx);
 	or  %edx, (%ebx);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
 
 	push %eax;
-pse_write_page_addr:
+//pse_write_page_addr:
 	#set phy address to phy address map 
 	mov 0x04(%esp), %eax;
 	shl $PML2_INDEX_SHIFT,%eax;
@@ -299,7 +297,7 @@ pse_write_page_addr:
 	mov %eax,0x04(%esp);
 	#loop check
 	testl $PAGE_OFFSET_MASK,%edx;
-	jne pse_write_page_addr;
+	//jne pse_write_page_addr;
 	pop %eax;
 	
 
@@ -307,12 +305,12 @@ pse_write_page_addr:
 	add $0x08, %ebx;
 	//add $PAGE_SIZE, %edx;
 
-	jmp pse_lev2_page_init_loop;
-pse_lev2_page_init_loop_end:
+	//jmp pse_lev2_page_init_loop;
+//pse_lev2_page_init_loop_end:
 
 
-	jmp pse_lev3_page_init_loop;
-pse_lev3_page_init_loop_end:
+	//jmp pse_lev3_page_init_loop;
+//pse_lev3_page_init_loop_end:
 	add $0x0c,%esp;
 	mov %edx, %eax;
 	jmp return_init_vm_success;

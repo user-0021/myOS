@@ -24,11 +24,11 @@ init_vmem:
 	push %ebx;
 	push %edi;
 	#allocate stack value
-	sub $0x08,%esp;
+	sub $0x20,%esp;
 
 
 	#calc memory size
-	push 0xc(%esp);
+	push 0x24(%esp);
 	call calc_memory_size;
 	add $0x04,%esp;
 	
@@ -155,13 +155,14 @@ kcode_lev3_page_init_loop_end:
 	
 
 
-	add $0x08,%esp;
+	add $0x20,%esp;
 	pop %edi;
+	hlt;
 	pop %ebx;
 	xor %eax,%eax;
 	ret;
 return_init_vm_failed:
-	add $0x08,%esp;
+	add $0x20,%esp;
 	pop %edi;
 	pop %ebx;
 	mov $-1,%eax;
@@ -197,121 +198,125 @@ create_page_pse:
 	mov (%esp), %ecx;
 	mov 0x04(%esp), %eax;
 
-	#calc lev2 page counts 最大値は32bitに収まるので上位バイトは無視
+	#calc lev1 page counts 
 	add $(((PT_ENTRY_COUNT - 1) << PAGE_SIZE_SHIFT) | PAGE_OFFSET_MASK), %ecx;
 	adc $0, %eax;
 	shr $(PT_INDEX_BITS + PAGE_SIZE_SHIFT), %ecx;
-	shl $(32 - (PT_INDEX_BITS + PAGE_SIZE_SHIFT)), %eax;
-	or %eax, %ecx;
-	push %ecx;
+	mov %eax, %ebx;
+	shr $(PT_INDEX_BITS + PAGE_SIZE_SHIFT), %eax;
+	shl $(32 - (PT_INDEX_BITS + PAGE_SIZE_SHIFT)), %ebx;
+	or %ebx, %ecx;
+	mov %eax,0x0c(%esp);
+	mov %ecx,0x08(%esp);
 
-	#calc lev3 page counts
+	#calc lev2 page counts 最大値は32bitに収まるので上位バイトは無視
 	add $(PT_ENTRY_COUNT - 1), %ecx;
 	shr $PT_INDEX_BITS, %ecx;
-	push %ecx;
+	mov %ecx,0x10(%esp);
 
-	hlt;
+
+	#calc lev3 page counts 最大値は32bitに収まるので上位バイトは無視
+	add $(PT_ENTRY_COUNT - 1), %ecx;
+	shr $PT_INDEX_BITS, %ecx;
+	mov %ecx,0x14(%esp);
+
 	#fill zero
-	//shl $(3 << (PAGE_SIZE_SHIFT - 2)),%ecx;# (1 lev4_pages + 1 lev3_pages + 1 lev2_pages) << (page_shift - long size) 
+	add 0x10(%esp), %ecx; #add lev2 page count
+	inc %ecx; #add lev4 page count
+	shl $(PAGE_SIZE_SHIFT - 2),%ecx;
 	mov %edx,%edi;
 	xor %eax, %eax;
 	rep stosl;
-
-	//init lev4 page
-	mov %edx, %eax;
-	addl $PAGE_SIZE, %eax;
-	movl $(PE_PRESENT | PE_RW | PE_US) , (%edx);
-	or  %eax, (%edx);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
-
-	//init lev3 page
-	mov %eax, %edx;
-	addl $PAGE_SIZE, %edx;
-	movl $(PE_PRESENT | PE_RW | PE_US) , (%eax);
-	or  %edx, (%eax);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
-
-	//init lev2 page
-	mov %edx, %eax;
-	xor %edx,%edx;
-//pse_lev2_page_init_loop:
-	#set phy address to phy address map
-	shl $PML2_INDEX_SHIFT,%eax;
-	movl $(PE_PRESENT | PE_RW | PE_US | PE_PAT | PE_GLOBAL), (%eax);
-	or  %edx, (%eax);
-	movl $((PE_NX) >> 32), 0x04(%eax);
-
-	add $0x08, %edx;
-	mov 0x04(%esp), %eax;
-	inc %eax;
-	mov %eax,0x04(%esp);
-	#loop check
-	testl $PAGE_OFFSET_MASK,%edx;
-	//jne pse_lev2_page_init_loop;
-//pse_lev2_page_init_loop_end:
 
 	# init pages
 	# init for loop
 	mov %edx, %edi;
 	add $PAGE_SIZE, %edx;
-	mov 0x04(%esp),%ecx;
-	movl $0x00,(%esp);
-//pse_lev3_page_init_loop:
+	mov 0x14(%esp),%ecx;
+	mov $0x00,0x18(%esp);
+	mov $0x00,0x1c(%esp);
+pse_lev3_page_init_loop:
 	#check loop
 	test %ecx,%ecx;
-	//je pse_lev3_page_init_loop_end;
+	je pse_lev3_page_init_loop_end;
 	dec %ecx;
+	#add entry
+	movl $(PE_PRESENT | PE_RW | PE_US), (%edi);
+	or %edx, (%edi);
 	#inc itr
 	mov %edx, %ebx;
 	add $0x08, %edi;
 	add $PAGE_SIZE, %edx;
 	#calc need lev2 page size
-	mov 0x08(%esp),%eax;
-	movl $0, 0x08(%esp);
+	mov 0x10(%esp),%eax;
+	movl $0, 0x10(%esp);
 	cmp $0x200, %eax;
-	//jle pse_lev2_page_init_loop;
+	jle pse_lev2_page_init_loop;
 	sub $0x200, %eax;
-	mov %eax,0x08(%esp);
-	mov $0x200, %eax;
-//pse_lev2_page_init_loop:
+	movl %eax,0x10(%esp);
+	movl $0x200, %eax;
+pse_lev2_page_init_loop:
 	#check loop
 	test %eax,%eax;
-	//je pse_lev2_page_init_loop_end;
+	je pse_lev2_page_init_loop_end;
 	dec %eax;
-	#init lev2 page
+	#add entry
 	movl $(PE_PRESENT | PE_RW | PE_US), (%ebx);
 	or  %edx, (%ebx);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
 
 	push %eax;
-//pse_write_page_addr:
-	#set phy address to phy address map 
-	mov 0x04(%esp), %eax;
-	shl $PML2_INDEX_SHIFT,%eax;
-	movl $(PE_PRESENT | PE_RW | PE_US | PE_PAT | PE_GLOBAL), (%edx);
-	or  %eax, (%edx);
-	mov 0x04(%esp), %eax;
-	shr $(32 - PML2_INDEX_SHIFT), %eax;
-	movl $((PE_NX) >> 32), 0x04(%edx);
-	or  %eax, 0x04(%edx);
-	add $0x08, %edx;
-	mov 0x04(%esp), %eax;
-	inc %eax;
-	mov %eax,0x04(%esp);
-	#loop check
-	testl $PAGE_OFFSET_MASK,%edx;
-	//jne pse_write_page_addr;
+	push %ecx;
+	push %ebx;
+	#init
+	mov %edx, %ecx;
+	add $PAGE_SIZE, %edx;
+	#calc need write size
+	mov 0x14(%esp), %eax;
+	addl $(-0x200),%eax;#sub 0x200 low byte
+	mov %eax, 0x14(%esp);
+	mov 0x18(%esp), %eax;
+	adcl $(-1), %eax;# sub high byte
+	mov %eax, 0x18(%esp);
+	movl $0x200,%eax;
+	testl $0x80000000,0x18(%esp);
+	je pse_write_page_addr;
+	add 0x10(%esp), %eax;
+pse_write_page_addr:
+	test %eax,%eax;
+	je pse_write_page_addr_end;
+
+	# init page
+	mov 0x28(%esp), %ebx;
+	movl $((PE_NX) >> 32), 0x04(%ecx);
+	or  %ebx, 0x04(%ecx);
+	mov 0x24(%esp), %ebx;
+	movl $(PE_PRESENT | PE_RW | PE_US | PE_PAT | PE_GLOBAL), (%ecx);
+	or  %ebx, (%ecx);
+	add $0x08, %ecx;
+
+	#inc or dec
+	dec %eax;
+
+	add $(1 << PML2_INDEX_SHIFT), %ebx;
+	mov %ebx,0x24(%esp);
+	mov 0x28(%esp), %ebx;
+	adc $0, %ebx;
+	mov %ebx,0x28(%esp);
+	
+	jmp pse_write_page_addr;
+pse_write_page_addr_end:
+	pop %ebx;
+	pop %ecx;
 	pop %eax;
 	
-
 	#inc itr
 	add $0x08, %ebx;
-	//add $PAGE_SIZE, %edx;
 
-	//jmp pse_lev2_page_init_loop;
-//pse_lev2_page_init_loop_end:
+	jmp pse_lev2_page_init_loop;
+pse_lev2_page_init_loop_end:
 
-
-	//jmp pse_lev3_page_init_loop;
-//pse_lev3_page_init_loop_end:
-	add $0x0c,%esp;
+	jmp pse_lev3_page_init_loop;
+pse_lev3_page_init_loop_end:
 	mov %edx, %eax;
 	jmp return_init_vm_success;
 

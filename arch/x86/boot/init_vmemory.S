@@ -99,6 +99,8 @@ return_init_vm_success:#カーネル用のページングを行うために最�
 
 	//ret
 	add $0x08,%esp;
+	pop %edi;
+	pop %ebx;
 	xor %eax,%eax;
 	ret;
 return_init_vm_failed:

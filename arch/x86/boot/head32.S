@@ -100,15 +100,23 @@ _entry_point:
 	#check return
 	cmp $0, %eax;
 	jl crash;
-
+	
 	#activeate pageing
 	mov %cr4, %eax;
 	or $(CR4_PAE), %eax;
 	mov %eax, %cr4;
+
 	mov  $(MSR_EFER), %ecx;
 	rdmsr;
 	or  $(MSR_EFER_LME), %eax;
 	wrmsr;
+
+	mov %cr0, %eax;
+	or $(CR0_PE | CR0_PG), %eax;
+	mov %eax, %cr0;
+
+	hlt;
+
 
 crash:
 	cli;

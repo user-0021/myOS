@@ -1,3 +1,11 @@
+/**
+ * @file memorymap.h
+ * @author user-0021
+ * @brief OSでリニアアドレスに関する定数を含みます
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
 #pragma once
 
 #define MEMORY_USER_SPACE 			0x0000000000000000 //	ユーザプロセス空間

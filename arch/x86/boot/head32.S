@@ -1,4 +1,5 @@
 #include <boot/multiboot2.h>
+#include <arch/x86/register.h>
 
 .extern _binary_code64_elf_bin_start
 .extern _binary_code64_elf_bin_end
@@ -91,7 +92,7 @@ _entry_point:
 	cmp $0, %eax;
 	jl crash;
 
-	#init vertual memory
+	#init virtual memory
 	push %ebx;
 	call init_vmem;
 	add $0x04,%esp;
@@ -100,14 +101,14 @@ _entry_point:
 	cmp $0, %eax;
 	jl crash;
 
-    nop;
-    nop;
-    nop;
-    hlt;
-    hlt;
-    hlt;
-    hlt;
-	jmp _entry_point;
+	#activeate pageing
+	mov %cr4, %eax;
+	or $(CR4_PAE), %eax;
+	mov %eax, %cr4;
+	mov  $(MSR_EFER), %ecx;
+	rdmsr;
+	or  $(MSR_EFER_LME), %eax;
+	wrmsr;
 
 crash:
 	cli;

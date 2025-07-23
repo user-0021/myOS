@@ -1,3 +1,9 @@
+/**
+ * @file multiboot2.h
+ * @brief multiboot2の各定数や構造体を定義しています
+ * 
+ */
+
 /*   multiboot2.h - Multiboot 2 header file. */
 /*   Copyright (C) 1999,2003,2007,2008,2009,2010  Free Software Foundation, Inc.
  *

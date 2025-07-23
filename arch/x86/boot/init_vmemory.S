@@ -1,6 +1,8 @@
 #include <boot/multiboot2.h>
 #include <arch/x86/cpuid.h>
+#include <arch/x86/register.h>
 #include <arch/x86/page_define.h>
+#include <mem/memorymap.h>
 
 .extern _kernel_image_phy_start_address
 .extern _kernel_image_phy_end_address
@@ -24,11 +26,11 @@ init_vmem:
 	push %ebx;
 	push %edi;
 	#allocate stack value
-	sub $0x20,%esp;
+	sub $0x08,%esp;
 
 
 	#calc memory size
-	push 0x24(%esp);
+	push 0x0c(%esp);
 	call calc_memory_size;
 	add $0x04,%esp;
 	
@@ -52,113 +54,51 @@ calc_success:
 	cmp $CPUID_GET_EXTENDED_PROCESSOR_INFO, %eax;
 	jge check_pdpe1gb;
 create_page:
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
+	#set cr3
+	mov (_kernel_image_phy_end_address),%edx;
+	mov %edx,%cr3;
+
+	#fill zero
+	mov $(PAGE_SIZE >> 2), %ecx; 
+	mov %edx,%edi;
+	xor %eax, %eax;
+	rep stosl;
+
+	#call create vtable
+	push 0x04(%esp);
+	push 0x04(%esp);
+	push $0;
+	push $0;
+	push $0;
+	push $0;
+	push $0;
+	push $(PE_PRESENT | PE_RW | PE_US);
+	push %edx;
+	add $PAGE_SIZE, %edx;
+	push %edx;
+	call create_vtable;
+	add $0x28, %esp;
+
 return_init_vm_success:#カーネル用のページングを行うために最後に確保したページ用メモリの次のアドレスをeaxに格納する必要があります
 	#calc kernel code size (by page)
-	mov (_kernel_image_phy_end_address), %ecx;
-	sub (_kernel_image_phy_start_address), %ecx;
-	push %ecx;
-
-	#calc lev1 page counts
-	add $PAGE_OFFSET_MASK, %ecx;
-	shr $PAGE_SIZE_SHIFT, %ecx;
-	push %ecx;
-
-	#calc lev2 page counts
-	add $(PT_ENTRY_COUNT - 1), %ecx;
-	shr $PT_INDEX_BITS, %ecx;
-	push %ecx;
-
-	#calc lev3 page counts
-	add $(PT_ENTRY_COUNT - 1), %ecx;
-	shr $PT_INDEX_BITS, %ecx;
-	push %ecx;
-
-	hlt;
-
-	# init pages
-	# init for loop
 	mov %cr3, %edx;
-	//add ,%edx;
-kcode_lev3_page_init_loop:
-	#check loop
-	test %ecx,%ecx;
-	je kcode_lev3_page_init_loop_end;
-	dec %ecx;
-	#init lev3 page
-	movl $(PE_PRESENT | PE_RW | PE_US) , (%edi);
-	or  %edx, (%edi);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
-	#inc itr
-	mov %edx, %ebx;
-	add $0x08, %edi;
-	add $PAGE_SIZE, %edx;
-	#calc need lev2 page size
-	mov 0x08(%esp),%eax;
-	movl $0, 0x08(%esp);
-	cmp $0x200, %eax;
-	jle kcode_lev2_page_init_loop;
-	sub $0x200, %eax;
-	mov %eax,0x08(%esp);
-	mov $0x200, %eax;
-kcode_lev2_page_init_loop:
-	#check loop
-	test %eax,%eax;
-	je kcode_lev2_page_init_loop_end;
-	dec %eax;
-	#init lev2 page
-	movl $(PE_PRESENT | PE_RW | PE_US), (%ebx);
-	or  %edx, (%ebx);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
 
+	#call create vtable
+	push $0;
+	pushl (_kernel_image_phy_end_address);
+	push $0;
+	pushl (_kernel_image_phy_start_address);
+	pushl $(MEMORY_KERNEL_CODE_SPACE >> 32);
+	pushl $MEMORY_KERNEL_CODE_SPACE;
+	push $0;
+	push $(PE_PRESENT | PE_RW | PE_US | PE_GLOBAL);
+	push %edx;
 	push %eax;
-kcode_write_page_addr:
-	#set phy address to phy address map 
-	mov 0x04(%esp), %eax;
-	shl $PML2_INDEX_SHIFT,%eax;
-	movl $(PE_PRESENT | PE_RW | PE_US | PE_PAT | PE_GLOBAL), (%edx);
-	or  %eax, (%edx);
-	mov 0x04(%esp), %eax;
-	shr $(32 - PML2_INDEX_SHIFT), %eax;
-	movl $((PE_NX) >> 32), 0x04(%edx);
-	or  %eax, 0x04(%edx);
-	add $0x08, %edx;
-	mov 0x04(%esp), %eax;
-	inc %eax;
-	mov %eax,0x04(%esp);
-	#loop check
-	testl $PAGE_OFFSET_MASK,%edx;
-	jne kcode_write_page_addr;
-	pop %eax;
-	
+	call create_vtable;
+	add $0x28, %esp;
 
-	#inc itr
-	add $0x08, %ebx;
-	//add $PAGE_SIZE, %edx;
-
-	jmp kcode_lev2_page_init_loop;
-kcode_lev2_page_init_loop_end:
-
-
-	jmp kcode_lev3_page_init_loop;
-kcode_lev3_page_init_loop_end:
-
-
-	
-
-
-	add $0x20,%esp;
-	pop %edi;
-	hlt;
-	pop %ebx;
+	//ret
+	add $0x08,%esp;
 	xor %eax,%eax;
 	ret;
 return_init_vm_failed:
@@ -174,14 +114,36 @@ check_pdpe1gb:
 	test $1 << CPUID_EX_EDX_PAGE1GB_SHIFT, %edx;
 	je check_pse;
 create_page_pdpe1gb:
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
-	hlt;
+	#set cr4
+	mov %cr4, %eax;
+	or $(CR4_PSE), %eax;
+	mov %eax, %cr4;
+
+	#set cr3
+	mov (_kernel_image_phy_end_address),%edx;
+	mov %edx,%cr3;
+
+	#fill zero
+	mov $(PAGE_SIZE >> 2), %ecx; 
+	mov %edx,%edi;
+	xor %eax, %eax;
+	rep stosl;
+
+	#call create vtable
+	push 0x04(%esp);
+	push 0x04(%esp);
+	push $0;
+	push $0;
+	push $0;
+	push $0;
+	push $0;
+	push $(PE_PRESENT | PE_RW | PE_US | PE_PAT);
+	push %edx;
+	add $PAGE_SIZE, %edx;
+	push %edx;
+	call create_vtable_with_pse;
+	add $0x28, %esp;
+
 	jmp return_init_vm_success;
 
 check_pse:
@@ -190,134 +152,36 @@ check_pse:
 	test $1 << CPUID_FEAT_EDX_PSE_SHIFT, %edx;
 	je create_page;
 create_page_pse:
+	#set cr4
+	mov %cr4, %eax;
+	or $(CR4_PSE), %eax;
+	mov %eax, %cr4;
+
 	#set cr3
 	mov (_kernel_image_phy_end_address),%edx;
 	mov %edx,%cr3;
 
-	#get max address
-	mov (%esp), %ecx;
-	mov 0x04(%esp), %eax;
-
-	#calc lev1 page counts 
-	add $(((PT_ENTRY_COUNT - 1) << PAGE_SIZE_SHIFT) | PAGE_OFFSET_MASK), %ecx;
-	adc $0, %eax;
-	shr $(PT_INDEX_BITS + PAGE_SIZE_SHIFT), %ecx;
-	mov %eax, %ebx;
-	shr $(PT_INDEX_BITS + PAGE_SIZE_SHIFT), %eax;
-	shl $(32 - (PT_INDEX_BITS + PAGE_SIZE_SHIFT)), %ebx;
-	or %ebx, %ecx;
-	mov %eax,0x0c(%esp);
-	mov %ecx,0x08(%esp);
-
-	#calc lev2 page counts 最大値は32bitに収まるので上位バイトは無視
-	add $(PT_ENTRY_COUNT - 1), %ecx;
-	shr $PT_INDEX_BITS, %ecx;
-	mov %ecx,0x10(%esp);
-
-
-	#calc lev3 page counts 最大値は32bitに収まるので上位バイトは無視
-	add $(PT_ENTRY_COUNT - 1), %ecx;
-	shr $PT_INDEX_BITS, %ecx;
-	mov %ecx,0x14(%esp);
-
 	#fill zero
-	add 0x10(%esp), %ecx; #add lev2 page count
-	inc %ecx; #add lev4 page count
-	shl $(PAGE_SIZE_SHIFT - 2),%ecx;
+	mov $(PAGE_SIZE >> 2), %ecx; 
 	mov %edx,%edi;
 	xor %eax, %eax;
 	rep stosl;
 
-	# init pages
-	# init for loop
-	mov %edx, %edi;
+	#call create vtable
+	push 0x04(%esp);
+	push 0x04(%esp);
+	push $0;
+	push $0;
+	push $0;
+	push $0;
+	push $0;
+	push $(PE_PRESENT | PE_RW | PE_US | PE_PAT);
+	push %edx;
 	add $PAGE_SIZE, %edx;
-	mov 0x14(%esp),%ecx;
-	mov $0x00,0x18(%esp);
-	mov $0x00,0x1c(%esp);
-pse_lev3_page_init_loop:
-	#check loop
-	test %ecx,%ecx;
-	je pse_lev3_page_init_loop_end;
-	dec %ecx;
-	#add entry
-	movl $(PE_PRESENT | PE_RW | PE_US), (%edi);
-	or %edx, (%edi);
-	#inc itr
-	mov %edx, %ebx;
-	add $0x08, %edi;
-	add $PAGE_SIZE, %edx;
-	#calc need lev2 page size
-	mov 0x10(%esp),%eax;
-	movl $0, 0x10(%esp);
-	cmp $0x200, %eax;
-	jle pse_lev2_page_init_loop;
-	sub $0x200, %eax;
-	movl %eax,0x10(%esp);
-	movl $0x200, %eax;
-pse_lev2_page_init_loop:
-	#check loop
-	test %eax,%eax;
-	je pse_lev2_page_init_loop_end;
-	dec %eax;
-	#add entry
-	movl $(PE_PRESENT | PE_RW | PE_US), (%ebx);
-	or  %edx, (%ebx);#32bit アドレス空間でやっているので、上位アドレスは設定しなくて良い
+	push %edx;
+	call create_vtable_with_pse;
+	add $0x28, %esp;
 
-	push %eax;
-	push %ecx;
-	push %ebx;
-	#init
-	mov %edx, %ecx;
-	add $PAGE_SIZE, %edx;
-	#calc need write size
-	mov 0x14(%esp), %eax;
-	addl $(-0x200),%eax;#sub 0x200 low byte
-	mov %eax, 0x14(%esp);
-	mov 0x18(%esp), %eax;
-	adcl $(-1), %eax;# sub high byte
-	mov %eax, 0x18(%esp);
-	movl $0x200,%eax;
-	testl $0x80000000,0x18(%esp);
-	je pse_write_page_addr;
-	add 0x10(%esp), %eax;
-pse_write_page_addr:
-	test %eax,%eax;
-	je pse_write_page_addr_end;
-
-	# init page
-	mov 0x28(%esp), %ebx;
-	movl $((PE_NX) >> 32), 0x04(%ecx);
-	or  %ebx, 0x04(%ecx);
-	mov 0x24(%esp), %ebx;
-	movl $(PE_PRESENT | PE_RW | PE_US | PE_PAT | PE_GLOBAL), (%ecx);
-	or  %ebx, (%ecx);
-	add $0x08, %ecx;
-
-	#inc or dec
-	dec %eax;
-
-	add $(1 << PML2_INDEX_SHIFT), %ebx;
-	mov %ebx,0x24(%esp);
-	mov 0x28(%esp), %ebx;
-	adc $0, %ebx;
-	mov %ebx,0x28(%esp);
-	
-	jmp pse_write_page_addr;
-pse_write_page_addr_end:
-	pop %ebx;
-	pop %ecx;
-	pop %eax;
-	
-	#inc itr
-	add $0x08, %ebx;
-
-	jmp pse_lev2_page_init_loop;
-pse_lev2_page_init_loop_end:
-
-	jmp pse_lev3_page_init_loop;
-pse_lev3_page_init_loop_end:
-	mov %edx, %eax;
 	jmp return_init_vm_success;
 
 # arg0 multiboot2_info_table

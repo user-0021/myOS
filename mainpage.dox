@@ -1,0 +1,45 @@
+/**
+ * @mainpage プロジェクトのドキュメント
+ *
+ * @tableofcontents
+ *
+ * @section sec_intro はじめに
+ * このドキュメントは自作OSについてのドキュメントです。
+ *
+ * @section modules モジュール
+ * - @ref Code-32bit
+ * 	- @ref Archtecture-32bit
+ * 	 - @ref x86_64-32bit
+ *
+ */
+
+
+/**
+ * @defgroup Code-32bit
+ * @brief ブート段階において64bitモードに移行するためのコード類
+ */
+
+/**
+* @defgroup Archtecture-32bit
+* @brief アーキテクチャー依存コード(32bits)
+* @ingroup Code-32bit
+*/
+
+
+/**
+* @defgroup x86_64-32bit
+* @brief x86_64アーキテクチャ用コード(32bit)
+* @ingroup Archtecture-32bit
+*/
+
+
+/**
+ * @defgroup Archtecture
+ * @brief アーキテクチャ依存の定義
+ */
+
+/**
+ * @defgroup x86_64
+ * @brief ブート段階において64bitモードに移行するためのコード類
+ * @ingroup Archtecture
+ */

@@ -1,11 +1,27 @@
+/**
+ * @file page_define.h
+ * @author user-0021
+ * @brief x86_64で仮想メモリを操作するための定数やマクロ群を含みます
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
 #pragma once
 
 
+/**
+ * @name x86_64 page table
+ * @{
+ */
+
+
+ /**
+  * @ingroup x86_64
+  */
 // --- ページングレベルに関する定義 ---
 // x86-64は4レベルページング（またはCR4.LA57有効で5レベル）をサポート
 // 通常は4レベルページングを前提とします。
 // 各レベルのエントリは512個 (9ビットインデックス)
-
 #define PT_ENTRY_COUNT 512       // 各ページテーブルレベルのエントリ数
 #define PT_INDEX_BITS  9         // 各レベルのページテーブルインデックスに必要なビット数
 
@@ -46,8 +62,7 @@
 #define PE_PCD             (1ULL << 4)   // PCD (Page Cache Disable): 0=キャッシュ可能, 1=キャッシュ無効
 #define PE_ACCESSED        (1ULL << 5)   // A (Accessed): ページまたはページテーブルにアクセスがあった
 #define PE_DIRTY           (1ULL << 6)   // D (Dirty): ページが書き込まれた (PTEレベルのみ有効)
-#define PE_PAT             (1ULL << 7)   // PAT (Page Attribute Table): CPUモードによって異なる意味を持つ
-                                       // (通常はPTEのみだが、PDPTE, PDEで1GB/2MBページにも適用)
+#define PE_PAT             (1ULL << 7)   // PAT (Page Attribute Table): PSE or pdpe1gb
 #define PE_GLOBAL          (1ULL << 8)   // G (Global): TLBでグローバルエントリとして扱う (CR4.PGEがセットされている場合)
 #define PE_NX              (1ULL << 63)  // XD (Execute Disable): 実行不可 (上位ビット)
 
@@ -65,15 +80,25 @@
 #define SET_FLAG(entry, flag)    ((entry) | (flag))
 #define CLEAR_FLAG(entry, flag)  ((entry) & ~(flag))
 #define HAS_FLAG(entry, flag)    (((entry) & (flag)) == (flag))
+/** @} */
+
+
 
 
 #ifndef __ASSEMBLER__
 #include <stdint.h>
 
 //各種GET
+/**
+ * @name Page table
+ * @{
+ */
 #define GET_PML4_INDEX(addr) (((uint64_t)(addr) & PML4_INDEX_MASK) >> PML4_INDEX_SHIFT)
 #define GET_PML3_INDEX(addr) (((uint64_t)(addr) & PML3_INDEX_MASK) >> PML3_INDEX_SHIFT)
 #define GET_PML2_INDEX(addr) (((uint64_t)(addr) & PML2_INDEX_MASK) >> PML2_INDEX_SHIFT)
 #define GET_PML1_INDEX(addr) (((uint64_t)(addr) & PML1_INDEX_MASK) >> PML1_INDEX_SHIFT)
 #define GET_PAGE_OFFSET(addr) ((uint64_t)(addr) & PAGE_OFFSET_MASK)
+/** @} */
+
+
 #endif

@@ -1,5 +1,7 @@
 #include <boot/multiboot2.h>
 #include <arch/x86/register.h>
+#include <mem/memorymap.h>
+
 
 .extern _binary_code64_elf_bin_start
 .extern _binary_code64_elf_bin_end
@@ -50,7 +52,7 @@ end_tag_end:
 header_end:
   
 # global data
-.section .data
+.section .bss
 .global _kernel_image_phy_start_address
 .global _kernel_image_phy_end_address
 .global _phy_memory_end
@@ -61,10 +63,24 @@ _kernel_image_phy_end_address: # init in load_kernel and use in init_vmemory
 _phy_memory_end: # init in init_vmemory and pass to kernel
 	.quad 0
 
+.section .data
+tmp_gdt_table:
+	.long tmp_gdt_table_end - tmp_gdt_table
+	.quad 0x0000000000000000
+	.quad 0x0000ffff00af9a00 //64bit-kernel-code
+	.quad 0x0000ffff00cf9300 //64bit-kernel-data
+	.align 8
+tmp_gdt_table_end:
+
+tmp_gdt_ptr:
+	.word tmp_gdt_table_end - tmp_gdt_table - 1
+	.long tmp_gdt_table
+	.align 8
+tmp_gdt_ptr_end:
+
 .section .text
 .globl	_entry_point
 .type	_entry_point, @function
-
 
 # entry point
 _entry_point:
@@ -101,6 +117,7 @@ _entry_point:
 	cmp $0, %eax;
 	jl crash;
 	
+
 	#activeate pageing
 	mov %cr4, %eax;
 	or $(CR4_PAE), %eax;
@@ -115,9 +132,29 @@ _entry_point:
 	or $(CR0_PE | CR0_PG), %eax;
 	mov %eax, %cr0;
 
-	hlt;
+	#load tmp gdt table
+	lgdt (tmp_gdt_ptr);
+	mov $0x10,%ax;
+	mov %ax, %ds;
+	mov %ax, %es; 
+	mov %ax, %fs; 
+	mov %ax, %gs;
+	mov %ax, %ss;
+
+	#push kernel addres
+	pushl $(MEMORY_KERNEL_CODE_SPACE >> 32);
+	pushl $(MEMORY_KERNEL_CODE_SPACE);
+
+	#push data for far ret
+	mov (_kernel_image_phy_start_address), %edx;
+	push $0x08;
+	pushl $jmp_to_kernel;
+	retf;
 
 
 crash:
 	cli;
     hlt;
+
+jmp_to_kernel:
+	ret;

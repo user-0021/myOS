@@ -1,7 +1,7 @@
-#include <boot/multiboot2.h>
 #include <arch/x86/cpuid.h>
 #include <arch/x86/register.h>
 #include <arch/x86/page_define.h>
+#include <multiboot2/multiboot2.h>
 #include <mem/memorymap.h>
 
 .extern _kernel_image_phy_start_address
@@ -101,13 +101,12 @@ return_init_vm_success:#カーネル用のページングを行うために最�
 	add $0x08,%esp;
 	pop %edi;
 	pop %ebx;
-	xor %eax,%eax;
 	ret;
 return_init_vm_failed:
 	add $0x20,%esp;
 	pop %edi;
 	pop %ebx;
-	mov $-1,%eax;
+	xor %eax,%eax;
 	ret;
 
 check_pdpe1gb:

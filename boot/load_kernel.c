@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <boot/multiboot2.h>
+#include <multiboot2/multiboot2.h>
 #include <boot/multiboot2_utils.h>
 #include <boot/simple_cui.h>
 #include <arch/x86/page_define.h>

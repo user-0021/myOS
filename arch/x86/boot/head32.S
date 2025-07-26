@@ -1,5 +1,5 @@
-#include <boot/multiboot2.h>
 #include <arch/x86/register.h>
+#include <multiboot2/multiboot2.h>
 #include <mem/memorymap.h>
 
 
@@ -114,9 +114,9 @@ _entry_point:
 	add $0x04,%esp;
 
 	#check return
-	cmp $0, %eax;
-	jl crash;
-	
+	test %eax, %eax;
+	je crash;
+	mov %eax, %edx;
 
 	#activeate pageing
 	mov %cr4, %eax;
@@ -142,11 +142,11 @@ _entry_point:
 	mov %ax, %ss;
 
 	#push kernel addres
-	pushl $(MEMORY_KERNEL_CODE_SPACE >> 32);
-	pushl $(MEMORY_KERNEL_CODE_SPACE);
+	mov (_kernel_image_phy_start_address), %eax;
+	pushl 0x04(%eax);
+	pushl (%eax);
 
 	#push data for far ret
-	mov (_kernel_image_phy_start_address), %edx;
 	push $0x08;
 	pushl $jmp_to_kernel;
 	retf;

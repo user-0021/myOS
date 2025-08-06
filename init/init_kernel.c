@@ -1,9 +1,23 @@
 #include <stdint.h>
+#include <stddef.h>
 #include <multiboot2.h>
 
+void failed_start_up(){
+	while(1);
+}
+
+
+/**
+ * @brief kernel entry point
+ * 
+ * @param multiboot2_info_table  multiboot2 info table 
+ * @param page free address space head 
+ * @return int 
+ */
 int _init_kernel(uint8_t* multiboot2_info_table,uint8_t* page){
 	//info
-	struct multiboot_tag_mmap* mmap_entry;
+	uint64_t memory_size = 0;
+	struct multiboot_tag_mmap* mmap_entry = NULL;
 
 	//calc size
 	uint32_t info_table_size = ((uint32_t*)multiboot2_info_table)[0];
@@ -26,6 +40,23 @@ int _init_kernel(uint8_t* multiboot2_info_table,uint8_t* page){
 		multiboot2_info_table += (((uint32_t*)multiboot2_info_table)[1] + MULTIBOOT_INFO_ALIGN - 1) & (~(MULTIBOOT_INFO_ALIGN - 1));
 	}
 
+	//error check
+	if(mmap_entry == NULL){
+		failed_start_up();
+	}
 	
-	//
+	//calc memory size
+	int32_t entry_count = (mmap_entry->size - 0x10) / mmap_entry->entry_size;
+	for(;0 < entry_count;){
+		entry_count--;
+		if(mmap_entry->entries[entry_count].type == MULTIBOOT_MEMORY_AVAILABLE){
+			memory_size = mmap_entry->entries[entry_count].addr + mmap_entry->entries[entry_count].len;
+		}
+	}
+
+	//error check
+	if(mmap_entry == NULL){
+		failed_start_up();
+	}
+
 }

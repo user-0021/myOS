@@ -37,17 +37,11 @@ init_vmem:
 	#check ret
 	test %eax,%eax;
 	jne calc_success;
-	test %edx,%edx;
-	jne calc_success;
-
 	#failed
 	jmp return_init_vm_failed;
 calc_success:
 	mov %eax,(%esp);
-	mov %edx,0x4(%esp);
-
-	mov %eax,(_phy_memory_end);
-	mov %edx,(_phy_memory_end + 0x4);
+	mov $0x00,0x4(%esp);
 
 	mov $CPUID_GET_HIGHEST_EXTENDED_FUNCTION, %eax;
 	cpuid;
@@ -186,7 +180,8 @@ create_page_pse:
 	jmp return_init_vm_success;
 
 # arg0 multiboot2_info_table
-# ret 64bit address
+# calc memory size (32bit)
+# ret 32bit address
 calc_memory_size:
 	push $MULTIBOOT_TAG_TYPE_MMAP;
 	push 0x08(%esp);
@@ -217,31 +212,20 @@ find_avilable_mem:
 	sub $0x10,%edx;
 
 	#add low byte
-	mov (%edx), %ecx;
-	mov 0x08(%edx), %eax;
-	add %eax,%ecx;
+	mov (%edx), %eax;
+	add 0x08(%edx), %eax;
 
 	#add high byte
-	mov 0x04(%edx), %eax;
-	adc 0x0c(%edx), %eax;
+	mov 0x04(%edx), %ecx;
+	adc 0x0c(%edx), %ecx;
 
-	#check value (max 64 TiB)
-	push %eax;
-	push %ecx;
-
+	#check value (max 32bit)
 	test %ecx,%ecx;
-	je find_avilable_mem_0;
-	inc %eax;
-find_avilable_mem_0:
-	cmp $(0x80 << (PML4_INDEX_SHIFT - 32)),%eax; 
-	jle find_avilable_mem_1;
-	movl $0, (%esp);
-	movl $(0x80 << (PML4_INDEX_SHIFT - 32)), 0x04(%esp);
-find_avilable_mem_1:
-
-	pop %eax;
-	pop %edx;
+	je success_calc_memory;
+	mov $0xFFFFFFFF, %eax;
+success_calc_memory:
 	ret;
+
 failed_get_mmap_tag:
 	#print failed reason
 	push $0;

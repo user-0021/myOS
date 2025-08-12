@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <multiboot2.h>
+#include <multiboot2/multiboot2.h>
 
 void failed_start_up(){
 	while(1);
@@ -15,6 +15,7 @@ void failed_start_up(){
  * @return int 
  */
 int _init_kernel(uint8_t* multiboot2_info_table,uint8_t* page){
+	
 	//info
 	uint64_t memory_size = 0;
 	struct multiboot_tag_mmap* mmap_entry = NULL;
@@ -55,8 +56,9 @@ int _init_kernel(uint8_t* multiboot2_info_table,uint8_t* page){
 	}
 
 	//error check
-	if(mmap_entry == NULL){
+	if(memory_size == 0){
 		failed_start_up();
 	}
 
+	
 }

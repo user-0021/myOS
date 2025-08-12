@@ -29,7 +29,6 @@ kernel_gdt_ptr_end:
 .type	_kernel_start, @function
 _kernel_start:
 #need multiboot2 tag table
-	
 
 	#load gdt
 	lgdt (kernel_gdt_ptr);

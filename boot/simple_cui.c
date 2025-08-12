@@ -17,11 +17,6 @@ void _put_char_indexd(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_c
 void _put_char_rgb(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_color);
 void _put_char_ega_text(char c,SIMPLE_CUI_COLOR text_color,SIMPLE_CUI_COLOR back_color);
 
-/**
- * @brief init simple_cui 
- * 
- * @param info_table multiboot2 info tag table
- */
 void init_simple_cui(char* info_table){
 	//find frame buffer tag
 	frame = (void*)find_tag((uint32_t)info_table,MULTIBOOT_TAG_TYPE_FRAMEBUFFER);
@@ -47,11 +42,6 @@ void init_simple_cui(char* info_table){
 	}
 }
 
-/**
- * @brief fill screen
- * 
- * @param color fill color.if in ega text mode, this param ignore.
- */
 void fill_screen(SIMPLE_CUI_COLOR color){
 
 	//check
@@ -78,14 +68,6 @@ void fill_screen(SIMPLE_CUI_COLOR color){
 }
 
 
-/**
- * @brief print text (like printf)
- * 
- * @param text      text
- * @param textColor text color
- * @param backColor back color
- * @param ...	argment
- */
 void print_text(char* text,SIMPLE_CUI_COLOR textColor,SIMPLE_CUI_COLOR backColor,...){
 	
 	if(frame != NULL){

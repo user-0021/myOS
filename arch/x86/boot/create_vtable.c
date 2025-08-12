@@ -21,19 +21,6 @@ inline void fill_zero(void* addr,uint32_t len){
     );
 }
 
-/**
- * @brief Create a vtable object
- * 
- * @param page_buffer page table buffer (need enough size)
- * @param lev4_page lev4 page addr
- * @param flag page flag
- * @param v_begin virtual address begin
- * @param phy_begin physycal address begin
- * @param phy_end  physycal address end
- * @return uint64_t* end of buffer address
- * 
- * @ingroup x86_64-32bit
- */
 uint64_t* create_vtable(uint64_t* page_buffer,uint64_t* lev4_page,uint64_t flag,uint64_t v_begin,uint64_t phy_begin,uint64_t phy_end){
 	//align
 	phy_begin = (phy_begin & ~PAGE_OFFSET_MASK);
@@ -117,17 +104,6 @@ uint64_t* create_vtable(uint64_t* page_buffer,uint64_t* lev4_page,uint64_t flag,
 	return page_buffer;
 }
 
-/**
- * @brief Create a vtable object by megabyte-page
- * 
- * @param page_buffer page table buffer (need enough size)
- * @param flag page flag
- * @param v_begin virtual address begin
- * @param phy_begin physycal address begin
- * @param phy_end  physycal address end
- * @return uint64_t* end of buffer address
- * @ingroup x86_64-32bit
- */
 uint64_t* create_vtable_with_pse(uint64_t* page_buffer,uint64_t* lev4_page,uint64_t flag,uint64_t v_begin,uint64_t phy_begin,uint64_t phy_end){
 	//align
 	phy_begin = (phy_begin & ~PAGE_OFFSET_MASK);

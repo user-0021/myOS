@@ -11,10 +11,11 @@ void failed_start_up(){
  * @brief kernel entry point
  * 
  * @param multiboot2_info_table  multiboot2 info table 
- * @param page free address space head 
+ * @param page allocated address space end 
  * @return int 
  */
 int _init_kernel(uint8_t* multiboot2_info_table,uint8_t* page){
+	
 	
 	//info
 	uint64_t memory_size = 0;
@@ -61,4 +62,8 @@ int _init_kernel(uint8_t* multiboot2_info_table,uint8_t* page){
 	}
 
 	
+	while (1)
+	{
+		/* code */
+	}
 }

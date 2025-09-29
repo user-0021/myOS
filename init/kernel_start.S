@@ -45,6 +45,7 @@ _kernel_start:
 	mov $0xFFFFFFFF, %rsi;
 	and %rdx,%rsi;
 
+
 	#push data for far ret
 	push $0x08;
 	push $_init_kernel;

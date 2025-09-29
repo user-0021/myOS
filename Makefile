@@ -3,9 +3,12 @@ include config.mk
 
 
 # common data
-TARGET = kernel.elf
-TARGET_32 = code32.elf
-TARGET_64 = code64.elf
+CD = cd
+
+BUILD_DIR = build
+TARGET = $(BUILD_DIR)/kernel.elf
+TARGET_32 = $(BUILD_DIR)/code32.elf
+TARGET_64 = $(BUILD_DIR)/code64.elf
 
 SRCS_64 = 
 SRCS_32 = 
@@ -24,8 +27,8 @@ ifeq ($(TARGET_ARCH), x86_64)
 	CC = gcc
 	OBJ_CPY = objcopy
 	DATA_32	= $(TARGET_64).o
-	VPATH_64	= init kernel 
-	VPATH_32	= arch/x86/boot boot
+	VPATH_64	= init kernel arch/x86/mem
+	VPATH_32	= arch/x86/boot boot 
 	CFLAGS_64	= -ffreestanding -std=c2x -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -mabi=sysv -Wall -Wextra -Wpedantic -O3 
 	CFLAGS_32	= -m32 -std=c2x -ffreestanding -fpic -fno-stack-protector -fshort-wchar -mno-red-zone -mgeneral-regs-only -Wall -Wextra -Wpedantic -O3 
 	LDFLAGS_64	= -nostdlib -static -Wl,-T,x86_kernel.lds -lgcc  
@@ -83,15 +86,19 @@ $(TARGET): $(DIRS_SORTED) $(TARGET_64) $(TARGET_32)
 
 
 $(TARGET_64): $(C_OBJS_64) $(S_OBJS_64) $(DATA_64)
+	@mkdir -p $(BUILD_DIR)
 	$(CC) $(LDFLAGS_64) -o $@ $(addprefix obj/, $(C_OBJS_64)) $(addprefix obj/, $(S_OBJS_64)) $(DATA_64)
 	$(OBJ_CPY) -O binary $(TARGET_64) $(TARGET_64).bin
-	$(OBJ_CPY) --readonly-text -I binary -O $(TARGET_32_FORMAT) --rename-section .data=.code64_image,alloc,load,readonly,data,contents $(TARGET_64).bin $(TARGET_64).o
+	$(CD) $(BUILD_DIR) && \
+	$(OBJ_CPY) --readonly-text -I binary -O $(TARGET_32_FORMAT) --rename-section .data=.code64_image,alloc,load,readonly,data,contents $(patsubst $(BUILD_DIR)/%,%.bin,$(TARGET_64)) $(patsubst $(BUILD_DIR)/%,%.o,$(TARGET_64))
 
 
 $(TARGET_32): $(C_OBJS_32) $(S_OBJS_32) $(DATA_32)
+	@mkdir -p $(BUILD_DIR)
 	$(CC) $(LDFLAGS_32) -o $@ $(addprefix obj/, $(C_OBJS_32)) $(addprefix obj/, $(S_OBJS_32)) $(DATA_32)
 	$(OBJ_CPY) -O binary $(TARGET_32) $(TARGET_32).bin
-	$(OBJ_CPY) --readonly-text -I binary -O $(TARGET_FORMAT) $(TARGET_32).bin $(TARGET_32).o
+	$(CD) $(BUILD_DIR) && \
+	$(OBJ_CPY) --readonly-text -I binary -O $(TARGET_FORMAT) $(patsubst $(BUILD_DIR)/%,%.bin,$(TARGET_32)) $(patsubst $(BUILD_DIR)/%,%.o,$(TARGET_32))
 
 #$(OBJ_CPY) --readonly-text -I binary -O elf64-x86-64 $(TARGET_64).bin $(TARGET_64).o
 

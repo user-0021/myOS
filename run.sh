@@ -3,7 +3,7 @@ unset GTK_PATH
 
 mkdir -p isofiles/boot/grub
 cp grub.cfg isofiles/boot/grub/
-cp kernel.elf isofiles/boot/
+cp build/kernel.elf isofiles/boot/
 grub-mkrescue -o os.iso isofiles/
 
 if hash qemu-system-x86_64 2>/dev/null; then
